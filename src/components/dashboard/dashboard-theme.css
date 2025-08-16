@@ -1,0 +1,140 @@
+/* === Layout Container === */
+.dashboard-container {
+  padding: 2rem;
+  background-color: #f8f9fb;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+}
+
+/* === Headings === */
+.dashboard-container h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1e1e2d;
+  margin-bottom: 1.5rem;
+}
+
+/* === Filters === */
+.dashboard-filters {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  align-items: center;
+}
+
+.dashboard-filters label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4a4a4a;
+}
+
+.dashboard-filters select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d3d3d3;
+  border-radius: 8px;
+  background-color: #fff;
+  font-size: 0.9rem;
+  outline: none;
+  box-shadow: none;
+  transition: border 0.2s ease-in-out;
+}
+
+.dashboard-filters select:focus {
+  border-color: #4b61ff;
+}
+
+/* === Table Styling === */
+.dashboard-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 12px;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  text-align: left;
+  padding: 0.9rem 1rem;
+  font-size: 0.95rem;
+}
+
+.dashboard-table thead th {
+  background-color: #f2f4f8;
+  color: #1f2b3b;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+}
+
+.dashboard-table tbody tr {
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+
+.dashboard-table tbody tr td {
+  border-top: 1px solid #eaeaea;
+  border-bottom: 1px solid #eaeaea;
+  color: #333;
+}
+
+.dashboard-table tbody tr:hover {
+  background-color: #f1f5f9;
+}
+
+/* === Buttons === */
+button {
+  background-color: #1d4ed8;
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+button:hover {
+  background-color: #2563eb;
+}
+
+button.secondary {
+  background-color: #ffffff;
+  color: #1f2937;
+  border: 1px solid #d1d5db;
+}
+
+button.secondary:hover {
+  background-color: #f9fafb;
+  border-color: #cbd5e1;
+}
+
+/* === Modals === */
+dialog {
+  padding: 1.8rem;
+  border-radius: 10px;
+  max-width: 520px;
+  background-color: #ffffff;
+}
+
+dialog input,
+dialog select {
+  font-size: 0.95rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #111827;
+  margin-bottom: 1rem;
+}
+
+dialog h3 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+/* === Icons === */
+svg {
+  color: #4b61ff;
+  vertical-align: middle;
+  font-size: 1.1rem;
+}

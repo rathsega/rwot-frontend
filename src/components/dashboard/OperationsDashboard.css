@@ -1,0 +1,10 @@
+.table-scroll-wrapper::-webkit-scrollbar {
+  height: 1.5px;
+}
+.table-scroll-wrapper::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+.table-scroll-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
