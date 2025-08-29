@@ -9,7 +9,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 // const baseUrl = "http://localhost:5001/api";
 
-const baseUrl = "http://www.rwot.in/api"
+const baseUrl = "http://51.21.130.83:5001/api"
 
 const PART_A_DOCS = [
   "Last 3 years financials Along with ITR’s",
@@ -70,7 +70,8 @@ const handleOnePagerUpload = async (caseId) => {
     const res = await fetch(`${baseUrl}/documents/upload`, {
       method: "POST",
       credentials: "include",
-      body: formData
+      body: formData,
+      headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
     });
 
     if (!res.ok) throw new Error("Upload failed");

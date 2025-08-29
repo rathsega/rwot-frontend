@@ -8,7 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 // const baseUrl = "http://localhost:5001/api";
 
-const baseUrl = "http://www.rwot.in/api"
+const baseUrl = "http://51.21.130.83:5001/api"
 
 const PART_A_DOCS = [
   "Last 3 years financials Along with ITR’s",
@@ -60,7 +60,8 @@ export default function OperationsDashboard() {
       const res = await fetch(`${baseUrl}/documents/upload`, {
         method: "POST",
         body: formData,
-        credentials: "include"
+        credentials: "include",
+        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
       });
 
       if (!res.ok) throw new Error("Upload failed");
@@ -94,7 +95,8 @@ const handleDelete = async (caseid, doc, part) => {
   try {
     await fetch(`${baseUrl}/documents/${match.id}`, {
       method: "DELETE",
-      credentials: "include"
+      credentials: "include",
+      headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
     });
 
     toast.success("Document deleted");

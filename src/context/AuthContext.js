@@ -15,9 +15,9 @@ export function AuthProvider({ children }) {
       const res = await apiFetch("/auth/me", {
         credentials: "include"
       });
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.user);
+      console.log(res);
+      if (res.user) {
+        setUser(res.user);
       } else {
         setUser(null);
       }
@@ -45,10 +45,12 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    await apiFetch("/auth/logout", {
+    console.log("Logging out...");
+    localStorage.removeItem("token");
+    /*await apiFetch("/auth/logout", {
       method: "POST",
       credentials: "include"
-    });
+    });*/
     setUser(null);
   };
 

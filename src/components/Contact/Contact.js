@@ -4,7 +4,7 @@ import { Button, Container } from "react-bootstrap";
 import Particle from "../Particle";
 import { useBackground } from "../../context/BackgroundContext";
 
-const baseUrl = "http://www.rwot.in/api"
+const baseUrl = "http://51.21.130.83:5001/api"
 
 // const baseUrl = "http://localhost:5001/api"
 
@@ -37,7 +37,7 @@ function Contact() {
     try {
       const res = await fetch(`${baseUrl}/send-email`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
         body: JSON.stringify(formData),
       });
 

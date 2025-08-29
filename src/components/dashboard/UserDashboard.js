@@ -10,7 +10,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import MissingInfoModal from "../MissingInfoModal";
 
-const baseUrl = "http://www.rwot.in/api"
+const baseUrl = "http://51.21.130.83:5001/api"
 
 // const baseUrl = "http://localhost:5001/api"
 
@@ -167,7 +167,8 @@ export default function UserDashboard() {
   const deleteDoc = async (docId) => {
     const res = await fetch(`${baseUrl}/documents/${docId}`, {
       method: "DELETE",
-      credentials: "include"
+      credentials: "include",
+      headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
     });
     if (!res.ok) {
       toast.error("❌ Delete failed.");
@@ -195,7 +196,8 @@ const handleDownload = async (filename) => {
   try {
     const res = await fetch(`${baseUrl}/documents/download/${filename}`, {
       method: "GET",
-      credentials: "include"
+      credentials: "include",
+      headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
     });
     if (!res.ok) throw new Error("Failed to download");
     const blob = await res.blob();
@@ -249,7 +251,8 @@ const handleUpload = async (part, doc) => {
     const res = await fetch(`${baseUrl}/documents/upload`, {
       method: "POST",
       body: formData,
-      credentials: "include"
+      credentials: "include",
+      headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
     });
 
     if (res.ok) {

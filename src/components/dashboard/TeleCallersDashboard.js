@@ -69,54 +69,61 @@ export default function TelecallersDashboard() {
     );
     setFormError("");
   };
+  const required = ["companyname", "clientname", "phonenumber", "date", "time", "assignedKam"];
+  const handleSave = async () => {
+    const missing = required.filter((k) => {
+      const v = form[k];
+      if (typeof v === 'string') return !v.trim();
+      return !v;
+    });
+    if (missing.length > 0) {
+      setFormError("Missing: " + missing.join(", "));
+      return;
+    }
+    const payload = {
+      caseid: modal.caseData?.caseid || `CASE${Date.now()}`,
+      companyname: form.companyname,
+      clientname: form.clientname,
+      phonenumber: form.phonenumber,
+      leadsource: form.leadsource,
+      turnover: form.turnover,
+      location: form.location,
+      spocemail: form.spocemail,
+      spocname: form.spocname,
+      spocphonenumber: form.spocphonenumber,
+      date: form.date,
+      time: form.time,
+      role: "Telecaller",
+      status: "Open",
+      comments: form.comments,
+      kamAssignee: form.assignedKam
+    };
 
-const handleSave = async () => {
-  const required = ["companyname", "clientname", "phonenumber", "leadsource", "date", "time", "assignedKam"];
-  const missing = required.filter((k) => !form[k]?.trim());
-  if (missing.length > 0) {
-    setFormError("Missing: " + missing.join(", "));
-    return;
-  }
-  const payload = {
-    caseid: modal.caseData?.caseid || `CASE${Date.now()}`,
-    companyname: form.companyname,
-    clientname: form.clientname,
-    phonenumber: form.phonenumber,
-    leadsource: form.leadsource,
-    turnover: form.turnover,
-    location: form.location,
-    spocemail: form.spocemail,
-    spocname: form.spocname,
-    spocphonenumber: form.spocphonenumber,
-    date: form.date,
-    time: form.time,
-    role: "Telecaller",
-    status: "Open",
-    comments: form.comments,
-    kamAssignee: form.assignedKam
+    const method = modal.caseData ? "PUT" : "POST";
+    const url = modal.caseData ? `/cases/edit/${modal.caseData.caseid}` : "/cases"; // Use new clean endpoint
+
+    let res, status;
+    try {
+      res = await apiFetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload)
+      });
+      status = res.status || res.statusCode || 200; // fallback to 200 if not present
+    } catch (err) {
+      toast.error("Network error. Failed to save case.");
+      return;
+    }
+
+    if (status === 200) {
+      await fetchCases();
+      setModal({ open: false, caseData: null });
+      toast.success(method === "POST" ? "Case created successfully" : "Case updated successfully");
+    } else {
+      toast.error(method === "POST" ? "Failed to create case." : "Failed to update case.");
+    }
   };
-
-  const method = modal.caseData ? "PUT" : "POST";
-  const url = modal.caseData ? `/cases/edit/${modal.caseData.caseid}` : "/cases"; // Use new clean endpoint
-
-  const res = await apiFetch(url, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(payload)
-  });
-
-  if (!res.message?.includes("Case created")) {
-    const err = await res;
-    toast.error("Failed to save case.");
-    // setFormError(err.error || "Failed to save case.");
-    return;
-  }
-
-  await fetchCases();
-  setModal({ open: false, caseData: null });
-  toast.success("Case saved successfully");
-};
 
   const handleCommentSend = async () => {
     if (!commentText.trim()) return;
@@ -230,7 +237,7 @@ const handleSave = async () => {
                 ["Comments", "comments"]
               ].map(([label, key]) => (
                 <div key={key} style={{ flex: "1 1 44%" }}>
-                  <label style={{ fontWeight: 600 }}>{label}</label>
+                  <label style={{ fontWeight: 600 }}>{label} {required.includes(key) && <span style={{ color: "#e53935" }}>*</span>}</label>
                   <input
                     type={key === "date" ? "date" : key === "time" ? "time" : "text"}
                     value={form[key] || ""}
@@ -302,8 +309,8 @@ const handleSave = async () => {
       )}
 
       <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick />
-      
-    </div>  
+
+    </div>
   );
 }
 

@@ -100,6 +100,9 @@ const userDetails = await apiFetch("/auth/login", {
     // Update AuthContext user state
     setUser(userDetails.user);
 
+    //store token in localstorage
+    localStorage.setItem("token", userDetails.token);
+
     // Fetch user info
     const userInfo = await apiFetch("/auth/me");
     if (!userInfo?.user) throw new Error("Failed to fetch user info");

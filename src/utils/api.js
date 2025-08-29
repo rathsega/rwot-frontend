@@ -1,6 +1,6 @@
-const baseUrl = "http://www.rwot.in/api"
+// const baseUrl = "http://51.21.130.83:5001/api"
 
-// // const baseUrl = "http://localhost:5001/api"
+const baseUrl = "http://localhost:5001/api"
 
 export default async function apiFetch(path, options = {}) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
@@ -13,7 +13,8 @@ export default async function apiFetch(path, options = {}) {
     ...options,
     headers: {
       ...defaultHeaders,
-      ...(options.headers || {})
+      ...(options.headers || {}),
+      "Authorization": `Bearer ${localStorage.getItem("token")}`
     },
     credentials: "include"
   };
