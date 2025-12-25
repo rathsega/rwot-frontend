@@ -1,6 +1,8 @@
-// const baseUrl = "http://51.21.130.83:5001/api"
+import { incrementRequests, decrementRequests } from './spinner';
 
-const baseUrl = "http://localhost:5001/api"
+const baseUrl = "http://13.60.218.94:5001/api"
+
+// const baseUrl = "http://localhost:5001/api"
 
 export default async function apiFetch(path, options = {}) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
@@ -8,7 +10,7 @@ export default async function apiFetch(path, options = {}) {
   const defaultHeaders = {
     "Content-Type": "application/json",
   };
-  console.log("API:", process.env.REACT_APP_API_BASE_URL);
+  
   const finalOptions = {
     ...options,
     headers: {
@@ -18,15 +20,37 @@ export default async function apiFetch(path, options = {}) {
     },
     credentials: "include"
   };
-    // ✅ Convert body to JSON string if it's a JS object
+  
+  // ✅ Convert body to JSON string if it's a JS object
   if (finalOptions.body && typeof finalOptions.body === "object") {
     finalOptions.body = JSON.stringify(finalOptions.body);
   }
   
-  const response = await fetch(url, finalOptions);
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.message || "API Error");
+  // ✅ Show spinner when first request starts
+  incrementRequests();
+
+  try {
+    const response = await fetch(url, finalOptions);
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      console.log("API Error Response:", error);
+      
+      // ✅ Throw with proper error message hierarchy
+      const errorMessage = error.message || error.error || error.msg || `API Error: ${response.status} ${response.statusText}`;
+      throw new Error(errorMessage);
+    }
+    
+    return response.json();
+  } catch (error) {
+    // ✅ If it's already an Error object, re-throw it
+    if (error instanceof Error) {
+      throw error;
+    }
+    // ✅ If it's a network error or other issue
+    throw new Error(error?.message || "Network error occurred");
+  } finally {
+    // ✅ Hide spinner when all requests complete
+    decrementRequests();
   }
-  return response.json();
 }

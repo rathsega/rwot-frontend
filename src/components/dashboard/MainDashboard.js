@@ -54,7 +54,7 @@ const clientData = {
     { stage: "Underwriting", status: "pending" },
     { stage: "Sanction/Disbursement", status: "pending" }
   ],
-  notification: "PART A checklist received. Notified Underwriter and Operations team."
+  notification: "PART A checklist received. Notified Underwriting and Operations team."
 };
 
 const allProducts = [

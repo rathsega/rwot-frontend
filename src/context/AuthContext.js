@@ -18,6 +18,7 @@ export function AuthProvider({ children }) {
       console.log(res);
       if (res.user) {
         setUser(res.user);
+        localStorage.setItem("userDetails", JSON.stringify(res.user));
       } else {
         setUser(null);
       }
@@ -47,6 +48,7 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     console.log("Logging out...");
     localStorage.removeItem("token");
+    localStorage.removeItem("userDetails");
     /*await apiFetch("/auth/logout", {
       method: "POST",
       credentials: "include"

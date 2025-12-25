@@ -15,22 +15,26 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export const navLinks = [
-  { key: "overview", label: "Overview", icon: <FaTachometerAlt />, route: "/dashboard" },
-  { key: "underwriter", label: "Underwriter", icon: <FaUserTie />, route: "/dashboard/underwriter" },
+  { key: "dashboard", label: "Dashboard", icon: <FaTachometerAlt />, route: "/dashboard/dashboard" },
+  { key: "users-dashboard", label: "Users Dashboard", icon: <FaTachometerAlt />, route: "/dashboard/users-dashboard" },
+  { key: "overview", label: "Overview", icon: <FaTachometerAlt />, route: "/dashboard/overview" },
+  { key: "underwriting", label: "Underwriting", icon: <FaUserTie />, route: "/dashboard/underwriting" },
   { key: "operations", label: "Operations", icon: <FaUserCog />, route: "/dashboard/operations" },
   { key: "telecallers", label: "Telecallers", icon: <FaUsers />, route: "/dashboard/telecallers" },
   { key: "kam", label: "KAM", icon: <FaUserCheck />, route: "/dashboard/kam" },
   { key: "client", label: "User Dashboard", icon: <FaRegUser />, route: "/dashboard/client" },
   { key: "banker", label: "Banker Dashboard", icon: <FaRegUser />, route: "/dashboard/banker" },
-  { key: "profile", label: "Profile Details", icon: <FaIdBadge />, route: "/dashboard/profile" }
+  { key: "profile", label: "Profile Details", icon: <FaIdBadge />, route: "/dashboard/profile" },
+  { key: "manage-banks", label: "Manage Banks", icon: <FaUserCog />, route: "/dashboard/manage-banks" },
+  { key: "user-management", label: "User Management", icon: <FaUsers />, route: "/dashboard/usermanagement" }
 ];
 
 const roleKeyMap = {
-  Admin: ["overview", "underwriter", "operations", "telecallers", "kam", "banker", "profile"],
-  UW: ["underwriter", "profile"],
-  Operations: ["operations", "profile"],
-  Telecaller: ["telecallers", "profile"],
-  KAM: ["kam", "profile"],
+  Admin: ["dashboard", "users-dashboard", "overview", "underwriting", "operations", "telecallers", "kam", "banker", "profile", "manage-banks", "user-management"],
+  UW: ["underwriting", "profile"],
+  Operations: ["operations", "profile", "dashboard", "manage-banks"],
+  Telecaller: ["telecallers", "profile", "dashboard"],
+  KAM: ["kam", "profile", "dashboard"],
   Banker: ["banker", "profile"],
   Individual: ["client", "profile"]
 };

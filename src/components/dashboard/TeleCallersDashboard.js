@@ -4,6 +4,8 @@ import { useAuth } from "../../context/AuthContext";
 import apiFetch from "../../utils/api";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { FaSearch } from "react-icons/fa";
+import dayjs from "dayjs";
 
 export default function TelecallersDashboard() {
   const { token } = useAuth() || {};
@@ -14,15 +16,186 @@ export default function TelecallersDashboard() {
   const [formError, setFormError] = useState("");
   const [commentsModal, setCommentsModal] = useState({ open: false, caseid: null });
   const [commentText, setCommentText] = useState("");
+  const [originalCases, setOriginalCases] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // ✅ Separate state for each filter
+  const [filters, setFilters] = useState({
+    status: "",
+    time: "",
+    assignee: "",
+    search: ""
+  });
+
+  const styles = {
+    modalOverlay: {
+      position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+      background: "rgba(38, 47, 73, 0.25)", display: "flex", alignItems: "center", justifyContent: "center",
+      zIndex: 1000
+    },
+    modal: {
+      background: "#fff",
+      padding: 24,
+      borderRadius: 16,
+      boxShadow: "0 8px 42px 0 rgba(18,38,63,0.17)",
+      minWidth: 420,
+      maxWidth: 820,
+      maxHeight: "90vh"
+    },
+    input: {
+      width: "100%",
+      padding: "9px 13px",
+      border: "1px solid #dadada",
+      borderRadius: 8,
+      fontSize: 15,
+      background: "#f8fafd",
+      fontWeight: 500,
+      outline: "none"
+    }
+  };
 
   useEffect(() => {
     fetchCases();
     fetchKamUsers();
   }, []);
 
+  // ✅ Apply all filters whenever filters state changes
+  useEffect(() => {
+    applyAllFilters();
+  }, [filters, originalCases]);
+
+  const applyAllFilters = () => {
+    let filtered = [...originalCases];
+
+    // Apply search filter
+    if (filters.search.trim()) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter((c) => {
+        const bankNames = c?.bank_assignments?.map(ba => ba.bank_name).join(" ").toLowerCase() || "";
+        return (
+          (c.companyname || "").toLowerCase().includes(searchLower) ||
+          (c.clientname || "").toLowerCase().includes(searchLower) ||
+          (c.productname || "").toLowerCase().includes(searchLower) ||
+          (c.assigned_to_name || c.assignee || "").toLowerCase().includes(searchLower) ||
+          (c.status || "").toLowerCase().includes(searchLower) ||
+          bankNames.includes(searchLower)
+        );
+      });
+    }
+
+    // Apply status filter
+    if (filters.status && filters?.status !== "Cold") {
+      filtered = filtered.filter((c) =>
+        (c.status || "--").toLowerCase() === filters.status.toLowerCase()
+      );
+    }
+
+    if(filters?.status === "Cold"){
+      filtered = filtered.filter((c) =>
+        c.status_updated_on &&
+                dayjs().diff(dayjs(c.status_updated_on), "hour") > 48
+      );  
+    }
+
+    // Apply time filter
+    if (filters.time) {
+      const now = new Date();
+      switch (filters.time) {
+        case "Today":
+          filtered = filtered.filter((c) => {
+            const updatedAt = new Date(c.updatedat || c.updatedAt);
+            return updatedAt.toDateString() === now.toDateString();
+          });
+          break;
+        case "Yesterday":
+          const yesterday = new Date(now);
+          yesterday.setDate(now.getDate() - 1);
+          filtered = filtered.filter((c) => {
+            const updatedAt = new Date(c.updatedat || c.updatedAt);
+            return updatedAt.toDateString() === yesterday.toDateString();
+          });
+          break;
+        case "Last 7 Days":
+          const sevenDaysAgo = new Date(now);
+          sevenDaysAgo.setDate(now.getDate() - 7);
+          filtered = filtered.filter((c) => {
+            const updatedAt = new Date(c.updatedat || c.updatedAt);
+            return updatedAt >= sevenDaysAgo;
+          });
+          break;
+        case "Last 30 Days":
+          const thirtyDaysAgo = new Date(now);
+          thirtyDaysAgo.setDate(now.getDate() - 30);
+          filtered = filtered.filter((c) => {
+            const updatedAt = new Date(c.updatedat || c.updatedAt);
+            return updatedAt >= thirtyDaysAgo;
+          });
+          break;
+        case "This Week":
+          const firstDayOfWeek = new Date(now);
+          firstDayOfWeek.setDate(now.getDate() - now.getDay());
+          filtered = filtered.filter((c) => {
+            const updatedAt = new Date(c.updatedat || c.updatedAt);
+            return updatedAt >= firstDayOfWeek;
+          });
+          break;
+        case "This Month":
+          const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          filtered = filtered.filter((c) => {
+            const updatedAt = new Date(c.updatedat || c.updatedAt);
+            return updatedAt >= firstDayOfMonth;
+          });
+          break;
+        case "This Year":
+          const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
+          filtered = filtered.filter((c) => {
+            const updatedAt = new Date(c.updatedat || c.updatedAt);
+            return updatedAt >= firstDayOfYear;
+          });
+          break;
+        default:
+          break;
+      }
+    }
+
+    // Apply assignee filter
+    if (filters.assignee) {
+      filtered = filtered.filter((c) =>
+        (c.assigned_to_name || c.assignee || "").toLowerCase() === filters.assignee.toLowerCase()
+      );
+    }
+
+    setCases(filtered);
+  };
+
+  const handleSearch = (searchValue) => {
+    setSearchTerm(searchValue);
+    setFilters(prev => ({ ...prev, search: searchValue }));
+  };
+
+  const handleFilterChange = (filterType, value) => {
+    setFilters(prev => ({ ...prev, [filterType]: value }));
+  };
+
+  const clearAllFilters = () => {
+    setFilters({
+      status: "",
+      time: "",
+      assignee: "",
+      search: ""
+    });
+    setSearchTerm("");
+    setCases(originalCases);
+
+    // Reset select elements
+    const selects = document.querySelectorAll(".filter-select");
+    selects.forEach(select => select.value = "");
+  };
+
   const fetchCases = async () => {
     const res = await apiFetch("/cases", { credentials: "include" });
     const data = await res;
+    setOriginalCases(data.cases || []);
     setCases(data.cases || []);
   };
 
@@ -42,6 +215,8 @@ export default function TelecallersDashboard() {
           phonenumber: c.phonenumber,
           leadsource: c.leadsource || (c.createdby === null ? "Website" : ""),
           turnover: c.turnover || "",
+          turnoverType: ["1-5cr", "5-25cr", "25-50cr", "50-100cr", "100+ cr"].includes(c.turnover)
+            ? c.turnover : c.turnover ? "Others" : "",
           location: c.location || "",
           spocemail: c.spocemail || "",
           spocname: c.spocname || "",
@@ -69,7 +244,9 @@ export default function TelecallersDashboard() {
     );
     setFormError("");
   };
+
   const required = ["companyname", "clientname", "phonenumber", "date", "time", "assignedKam"];
+
   const handleSave = async () => {
     const missing = required.filter((k) => {
       const v = form[k];
@@ -78,6 +255,14 @@ export default function TelecallersDashboard() {
     });
     if (missing.length > 0) {
       setFormError("Missing: " + missing.join(", "));
+      return;
+    }
+    if (form.phonenumber && !/^\d{10}$/.test(form.phonenumber.trim())) {
+      setFormError("Phone number must be 10 digits.");
+      return;
+    }
+    if (form.time && !/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(form.time.trim())) {
+      setFormError("Time must be in HH:MM format (e.g., 14:30).");
       return;
     }
     const payload = {
@@ -100,7 +285,7 @@ export default function TelecallersDashboard() {
     };
 
     const method = modal.caseData ? "PUT" : "POST";
-    const url = modal.caseData ? `/cases/edit/${modal.caseData.caseid}` : "/cases"; // Use new clean endpoint
+    const url = modal.caseData ? `/cases/edit/${modal.caseData.caseid}` : "/cases";
 
     let res, status;
     try {
@@ -110,7 +295,7 @@ export default function TelecallersDashboard() {
         credentials: "include",
         body: JSON.stringify(payload)
       });
-      status = res.status || res.statusCode || 200; // fallback to 200 if not present
+      status = res.status || res.statusCode || 200;
     } catch (err) {
       toast.error("Network error. Failed to save case.");
       return;
@@ -118,6 +303,7 @@ export default function TelecallersDashboard() {
 
     if (status === 200) {
       await fetchCases();
+      await fetchKamUsers();
       setModal({ open: false, caseData: null });
       toast.success(method === "POST" ? "Case created successfully" : "Case updated successfully");
     } else {
@@ -145,13 +331,103 @@ export default function TelecallersDashboard() {
     <div style={{ padding: 32 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <h2 style={{ margin: 0 }}>Telecaller Dashboard</h2>
-        <div style={{ flexGrow: 1 }}></div>
         <button
           onClick={() => handleModalOpen()}
           style={{ background: "#1d4ed8", color: "white", border: "none", borderRadius: 6, padding: "10px 20px", fontWeight: 600 }}
         >
           <FaPlus style={{ marginRight: 8 }} /> Add Lead
         </button>
+      </div>
+
+      <div className="dashboard-filters" style={{ display: "flex", gap: "10px" }}>
+        <div style={{ position: "relative" }}>
+          <input
+            type="text"
+            placeholder="Search cases..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            style={{
+              paddingRight: "35px",
+              padding: "8px",
+              borderRadius: "4px",
+              border: "1px solid #ddd",
+              minWidth: "200px"
+            }}
+          />
+          <FaSearch style={{
+            position: "absolute",
+            right: "10px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            color: "#666"
+          }} />
+        </div>
+
+        <label>
+          Stage:
+          <select
+            className="filter-select"
+            name="stage"
+            value={filters.status}
+            onChange={(e) => handleFilterChange("status", e.target.value)}
+          >
+            <option value="">All</option>
+            <option value="Open">Open</option>
+            <option value="Meeting Done">Meeting Done</option>
+            <option value="Documentation Initiated">Documentation Initiated</option>
+            <option value="Documentation In Progress">Documentation In Progress</option>
+            <option value="Underwriting">Underwriting</option>
+            <option value="One Pager">One Pager</option>
+            <option value="Banker Review">Banker Review</option>
+            <option value="No Requirement">No Requirement</option>
+            <option value="Cold">Cold</option>
+          </select>
+        </label>
+
+        <label>
+          Time:
+          <select
+            className="filter-select"
+            name="time"
+            value={filters.time}
+            onChange={(e) => handleFilterChange("time", e.target.value)}
+          >
+            <option value="">All</option>
+            <option value="Today">Today</option>
+            <option value="Yesterday">Yesterday</option>
+            <option value="Last 7 Days">Last 7 Days</option>
+            <option value="Last 30 Days">Last 30 Days</option>
+            <option value="This Week">This Week</option>
+            <option value="This Month">This Month</option>
+            <option value="This Year">This Year</option>
+          </select>
+        </label>
+
+        <label>
+          Assignee:
+          <select
+            className="filter-select"
+            value={filters.assignee}
+            onChange={(e) => handleFilterChange("assignee", e.target.value)}
+          >
+            <option value="">All</option>
+            {Array.from(new Set(originalCases.map((c) => c.assigned_to_name || c.assignee).filter(Boolean))).map((name, idx) => (
+              <option key={idx} value={name}>{name}</option>
+            ))}
+          </select>
+        </label>
+
+        <div>
+          <button
+            onClick={clearAllFilters}
+            style={{ background: "#463939ff", color: "white", border: "none", borderRadius: 4, padding: "6px 12px", cursor: "pointer" }}
+          >
+            Clear Filters
+          </button>
+        </div>
+      </div>
+      <div>
+        Showing {cases.length} of {originalCases.length} cases
       </div>
 
       {/* Table */}
@@ -173,7 +449,7 @@ export default function TelecallersDashboard() {
             </tr>
           </thead>
           <tbody>
-            {cases.map((c, i) => (
+            {cases?.map((c, i) => (
               <tr key={i} style={{ borderBottom: "1px solid #eee", fontWeight: 500 }}>
                 <td style={{ textAlign: "left", padding: 14 }}>
                   <button onClick={() => handleModalOpen(c)} style={{ border: "none", background: "none", color: "#2979ff", cursor: "pointer" }}>
@@ -185,14 +461,18 @@ export default function TelecallersDashboard() {
                 <td style={{ textAlign: "left", padding: 12 }}>{c.phonenumber}</td>
                 <td style={{ textAlign: "left", padding: 12 }}>{c.leadsource}</td>
                 <td style={{ textAlign: "left", padding: 12 }}>{c.turnover}</td>
-                <td style={{ textAlign: "left", padding: 12 }}>{c.location}</td>
+                <td style={{ textAlign: "left", padding: 12 }}>
+                  {c.location && c.location.startsWith('http') ? (
+                    <a href={c.location} target="_blank" rel="noopener noreferrer">View</a>
+                  ) : (
+                    c.location || "--"
+                  )}
+                </td>
                 <td style={{ textAlign: "left", padding: 12 }}>{new Date(c.date).toLocaleDateString()}</td>
                 <td style={{ textAlign: "left", padding: 12 }}>{c.status}</td>
                 <td style={{ textAlign: "left", padding: 12 }}>
                   {
-                    kamUsers.find((u) => u.id === Number(c.kamAssignee))?.name ||
-                    c.assigned_to_name ||
-                    c.assignedkamname ||
+                    kamUsers.find((u) => u.id === Number(c.assignedKam))?.name ||
                     "--"
                   }
                 </td>
@@ -210,7 +490,7 @@ export default function TelecallersDashboard() {
         </table>
       </div>
 
-      {/* Modal */}
+      {/* Modal code remains the same... */}
       {modal.open && (
         <div style={styles.modalOverlay}>
           <div style={styles.modal}>
@@ -237,13 +517,66 @@ export default function TelecallersDashboard() {
                 ["Comments", "comments"]
               ].map(([label, key]) => (
                 <div key={key} style={{ flex: "1 1 44%" }}>
-                  <label style={{ fontWeight: 600 }}>{label} {required.includes(key) && <span style={{ color: "#e53935" }}>*</span>}</label>
-                  <input
-                    type={key === "date" ? "date" : key === "time" ? "time" : "text"}
-                    value={form[key] || ""}
-                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                    style={styles.input}
-                  />
+                  <label style={{ fontWeight: 600 }}>
+                    {label} {required.includes(key) && <span style={{ color: "#e53935" }}>*</span>}
+                  </label>
+                  {key === "time" ? (
+                    <select
+                      value={form[key] || ""}
+                      onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                      style={styles.input}
+                    >
+                      <option value="">Select Time</option>
+                      {Array.from({ length: 48 }, (_, i) => {
+                        const hours = Math.floor(i / 2);
+                        const minutes = (i % 2) * 30;
+                        const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                        return (
+                          <option key={timeString} value={timeString}>
+                            {timeString}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  ) : key === "turnover" ? (
+                    <div>
+                      <select
+                        value={form.turnoverType || ""}
+                        onChange={e => {
+                          setForm(f => ({
+                            ...f,
+                            turnoverType: e.target.value,
+                            turnover: e.target.value === "Others" ? "" : e.target.value
+                          }));
+                        }}
+                        style={styles.input}
+                      >
+                        <option value="">Select Turnover Range</option>
+                        <option value="1-5cr">1-5 Cr</option>
+                        <option value="5-25cr">5-25 Cr</option>
+                        <option value="25-50cr">25-50 Cr</option>
+                        <option value="50-100cr">50-100 Cr</option>
+                        <option value="100+ cr">100+ Cr</option>
+                        <option value="Others">Others</option>
+                      </select>
+                      {form.turnoverType === "Others" && (
+                        <input
+                          type="text"
+                          value={form.turnover || ""}
+                          onChange={e => setForm(f => ({ ...f, turnover: e.target.value }))}
+                          style={{ ...styles.input, marginTop: 8 }}
+                          placeholder="Enter custom turnover amount"
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <input
+                      type={key === "date" ? "date" : "text"}
+                      value={form[key] || ""}
+                      onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                      style={styles.input}
+                    />
+                  )}
                 </div>
               ))}
 
@@ -272,7 +605,6 @@ export default function TelecallersDashboard() {
         </div>
       )}
 
-      {/* Comments Modal */}
       {commentsModal.open && (
         <div style={styles.modalOverlay}>
           <div style={{ ...styles.modal, minWidth: 420 }}>
@@ -309,7 +641,6 @@ export default function TelecallersDashboard() {
       )}
 
       <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick />
-
     </div>
   );
 }

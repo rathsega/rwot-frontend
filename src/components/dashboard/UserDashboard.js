@@ -9,8 +9,9 @@ import apiFetch from "../../utils/api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import MissingInfoModal from "../MissingInfoModal";
+import { showSpinner, hideSpinner } from "../../utils/spinner";
 
-const baseUrl = "http://51.21.130.83:5001/api"
+const baseUrl = "http://13.60.218.94:5001/api"
 
 // const baseUrl = "http://localhost:5001/api"
 
@@ -43,6 +44,7 @@ const OTHER_PRODUCTS = [
   { name: "Business Overdraft", desc: "Flexible overdraft facility for cashflow." },
   { name: "Term Loan", desc: "Long-term funding for assets/growth." },
 ];
+const PROVISIONAL_DOCS = [];
 
 export default function UserDashboard() {
   const { user } = useAuth();
@@ -62,7 +64,7 @@ export default function UserDashboard() {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: "Individual" })
+      body: JSON.stringify({ role: "Individual", email: user.email })
     });
     if (!res) {
       toast.error("❌ Failed to fetch cases.");
@@ -71,7 +73,6 @@ export default function UserDashboard() {
     const data = await res;
 
     const updatedCases = data.cases
-      .filter(c => c.assignee === user.email)
       .map(c => {
         const partADocs = (c.documents || []).filter(d => d.doctype === "partA");
         const partBDocs = (c.documents || []).filter(d => d.doctype === "partB");
@@ -109,9 +110,22 @@ export default function UserDashboard() {
     partBUploads[docKey] = d;
   });
 
+  const provisionalUploads = {};
+  (currCase.documents || []).forEach((d) => {
+    if (d.docname && d.doctype.toLowerCase().includes("provisional")) {
+      provisionalUploads[d.docname] = d;
+      PROVISIONAL_DOCS.push(d.docname);  // Add to list if uploaded
+    }
+  });
+  (currCase.provisional_docs || []).forEach((d, i) => {
+    const docKey = d.document_name || `provisional${i}`;
+    if (!PROVISIONAL_DOCS.includes(docKey)) PROVISIONAL_DOCS.push(docKey); // Ensure unique entries
+  });
+
   const numUploaded =
     PART_A_DOCS.filter((doc, i) => partAUploads[doc] || partAUploads[PART_A_DOCS[i]]).length +
-    PART_B_DOCS.filter((doc, i) => partBUploads[doc] || partBUploads[PART_B_DOCS[i]]).length;
+    PART_B_DOCS.filter((doc, i) => partBUploads[doc] || partBUploads[PART_B_DOCS[i]]).length + 
+    PROVISIONAL_DOCS.length;
   const totalDocs = PART_A_DOCS.length + PART_B_DOCS.length;
 
   let activeStep = 0;
@@ -165,11 +179,13 @@ export default function UserDashboard() {
 };
 
   const deleteDoc = async (docId) => {
+    showSpinner();
     const res = await fetch(`${baseUrl}/documents/${docId}`, {
       method: "DELETE",
       credentials: "include",
       headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
     });
+    hideSpinner();
     if (!res.ok) {
       toast.error("❌ Delete failed.");
       throw new Error("Delete failed");
@@ -194,11 +210,13 @@ export default function UserDashboard() {
 
 const handleDownload = async (filename) => {
   try {
+    showSpinner();
     const res = await fetch(`${baseUrl}/documents/download/${filename}`, {
       method: "GET",
       credentials: "include",
       headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
     });
+    hideSpinner();
     if (!res.ok) throw new Error("Failed to download");
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
@@ -218,7 +236,7 @@ const handleDownload = async (filename) => {
 const handleDelete = async (part, doc) => {
   const uploadObj = part === "partA"
     ? partAUploads[doc] || Object.values(partAUploads).find(x => x && x.filename === doc)
-    : partBUploads[doc] || Object.values(partBUploads).find(x => x && x.filename === doc);
+    : (part === "partB" ? partBUploads[doc] || Object.values(partBUploads).find(x => x && x.filename === doc) : provisionalUploads[doc]);
 
   if (!uploadObj) return;
 
@@ -248,12 +266,14 @@ const handleUpload = async (part, doc) => {
   formData.append("docname", doc);
 
   try {
+    showSpinner();
     const res = await fetch(`${baseUrl}/documents/upload`, {
       method: "POST",
       body: formData,
       credentials: "include",
       headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
     });
+    hideSpinner();
 
     if (res.ok) {
       await fetchCases(); // Refresh
@@ -289,7 +309,7 @@ const handleUpload = async (part, doc) => {
           <div style={{ fontSize: 16, marginBottom: 4 }}>{currCase.clientname || "--"} | {currCase.spocname || "--"}</div>
           <div style={{ fontSize: 14, marginBottom: 10 }}>{currCase.phonenumber || "--"} | {currCase.companyemail || "--"}</div>
           <div style={{ background: "#ffe98f", color: "#5a4d25", padding: "6px 12px", borderRadius: 8, fontWeight: 700, display: "inline-block" }}>{currCase.status || "Docs Pending"}</div>
-          <div style={{ fontSize: 14, marginTop: 6 }}>{currCase.stage || "--"}</div>
+          
         </div>
           <div style={{ textAlign: "center", marginTop: 50 }}>
           <button
@@ -342,7 +362,8 @@ const handleUpload = async (part, doc) => {
       {/* Upload Sections */}
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 40, marginTop: 30 }}>
         {[{ title: "Part A Documents", docs: PART_A_DOCS, uploads: partAUploads, part: "partA" },
-          { title: "Part B Documents", docs: PART_B_DOCS, uploads: partBUploads, part: "partB" }]
+          { title: "Part B Documents", docs: PART_B_DOCS, uploads: partBUploads, part: "partB" },
+          { title: "Other Documents", docs: Object.keys(provisionalUploads), uploads: provisionalUploads, part: "provisional" }]
           .map(({ title, docs, uploads, part }) => (
             <div key={part} style={{ background: "#fff", borderRadius: 14, padding: 24, width: 580, boxShadow: "0 2px 10px #e6ecf8" }}>
               <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 12, color: "#1d4ed8" }}>{title}</div>

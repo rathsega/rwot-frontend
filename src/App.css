@@ -155,3 +155,39 @@
     transform: scale(1);
   }
 }
+
+.border-red-flag {
+  position: relative;
+  border: 2px solid #e74c3c !important;
+  margin: 35px !important; /* Add margin to give space for the shadow */
+  box-shadow:
+    0 0 0 2px rgba(231, 76, 60, 0.9),     /* Layer 1 - Highest contrast */
+    0 0 0 3px rgba(245, 89, 71, 0.75),    /* Layer 2 */
+    0 0 0 4px rgba(231, 76, 60, 0.6),     /* Layer 3 */
+    0 0 0 5px rgba(231, 76, 60, 0.45),   /* Layer 4 */
+    0 0 0 7px rgba(231, 76, 60, 0.3),    /* Layer 5 */
+    0 0 0 9px rgba(231, 76, 60, 0.15),   /* Layer 6 */
+    0 0 0 11px rgba(231, 76, 60, 0.05) !important;   /* Layer 7 - Lowest contrast */
+  backdrop-filter: blur(2px);
+  transition: box-shadow 0.2s, backdrop-filter 0.2s;
+  z-index: 1;
+}
+
+/* Alternative approach if margin causes layout issues */
+.border-red-flag-alt {
+  position: relative;
+  border: 2px solid #e74c3c !important;
+  box-shadow:
+    0 0 2px 1px rgba(231, 76, 60, 0.9),     /* Blur shadow instead of solid */
+    0 0 4px 2px rgba(231, 76, 60, 0.75),
+    0 0 7px 3px rgba(231, 76, 60, 0.6),
+    0 0 10px 4px rgba(231, 76, 60, 0.45),
+    0 0 14px 6px rgba(231, 76, 60, 0.3)!important;
+  backdrop-filter: blur(2px);
+  transition: box-shadow 0.2s, backdrop-filter 0.2s;
+  z-index: 1;
+}
+
+.lead-card {
+  position: relative;
+}

@@ -27,6 +27,8 @@ function NavBar() {
 
   // 🚨 Auto logout if user navigates away from dashboard
   useEffect(() => {
+    console.log("Location changed:", location.pathname);
+    console.log("Current user:", user);
     if (user && !location.pathname.includes("/dashboard")) {
       logout(); // auto-logout when leaving dashboard
     }

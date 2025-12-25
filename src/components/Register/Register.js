@@ -95,7 +95,7 @@ const userDetails = await apiFetch("/auth/login", {
     });
 
     //set userDetails.user in AuthContext
-    if (!userDetails?.user) throw new Error("Invalid login credentials");
+    if (!userDetails?.user) throw new Error(userDetails?.error || "Login failed");
     console.log("User logged in:", userDetails.user);
     // Update AuthContext user state
     setUser(userDetails.user);
@@ -107,12 +107,19 @@ const userDetails = await apiFetch("/auth/login", {
     const userInfo = await apiFetch("/auth/me");
     if (!userInfo?.user) throw new Error("Failed to fetch user info");
 
+    if (userInfo.user) {
+        setUser(userInfo.user);
+        localStorage.setItem("userDetails", JSON.stringify(userInfo.user));
+      } else {
+        setUser(null);
+      }
+
     setSuccess("Login successful! Redirecting...");
 
     // 🔁 Role-based navigation
     const roleToPath = {
-      Admin: "/dashboard",
-      UW: "/dashboard/underwriter",
+      Admin: "/dashboard/admin",
+      UW: "/dashboard/underwriting",
       Operations: "/dashboard/operations",
       Telecaller: "/dashboard/telecallers",
       KAM: "/dashboard/kam",

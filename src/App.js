@@ -19,16 +19,23 @@ import Register from "./components/Register/Register";
 import Industries from "./components/Industries/Industries";
 import TestimonialCarousel from "./components/Testimonials/Testimonials";
 import Services from "./components/Services/Services";
-import UnderwriterDashboard from "./components/dashboard/UnderwriterDashboard";
+import UnderwritingDashboard from "./components/dashboard/UnderwritingDashboard";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
 import OverviewDashboard from "./components/dashboard/DashboardOverview";
 import OperationsDashboard from "./components/dashboard/OperationsDashboard";
 import TelecallersDashboard from "./components/dashboard/TeleCallersDashboard";
-import KamDashboard from "./components/dashboard/KAMDashboard";
+import KAMDashboard from "./components/dashboard/KAMDashboard";
 import UserDashboard from "./components/dashboard/UserDashboard";
 import Profile from "./components/dashboard/profile";
 import BankerDashboard from "./components/dashboard/BankerDashboard";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import Dashboard from './components/dashboard/Dashboard';
+import NewDashboard from './components/dashboard/NewDashboard';
+import ManageBanks from './components/dashboard/ManageBanks';
+import UserManagement from './components/dashboard/UserManagement';
+import BankerRegister from "./components/Register/BankerRegister";
+import InternalRegister from "./components/Register/InternalRegister";
+import UsersDashboard from "./components/dashboard/UsersDashboard";
 
 function ProtectedRoute({ element: Element, allowedRoles }) {
   const { user, loading } = useAuth();
@@ -48,7 +55,7 @@ function useRedirectAfterLogin() {
     if (!loading && user && location.pathname === "/register") {
       const roleToPath = {
         Admin: "/dashboard",
-        UW: "/dashboard/underwriter",
+        UW: "/dashboard/underwriting",
         Operations: "/dashboard/operations",
         Telecaller: "/dashboard/telecallers",
         KAM: "/dashboard/kam",
@@ -91,17 +98,23 @@ function AppContent() {
           <Route path="/testimonials" element={<TestimonialCarousel />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/bankerregister" element={<BankerRegister />} />
+          <Route path="/internalregister" element={<InternalRegister />} />
 
           {/* DASHBOARD ROUTES */}
           <Route path="/dashboard/*" element={<DashboardLayout />}>
-            <Route index element={<ProtectedRoute element={OverviewDashboard} allowedRoles={["Admin"]} />} />
-            <Route path="underwriter" element={<ProtectedRoute element={UnderwriterDashboard} allowedRoles={["Admin", "UW"]} />} />
+            <Route index element={<ProtectedRoute element={NewDashboard} allowedRoles={["Admin","Operations", "KAM", "Telecaller"]} />} />
+            <Route path="overview" element={<ProtectedRoute element={OverviewDashboard} allowedRoles={["Admin"]} />} />
+            <Route path="underwriting" element={<ProtectedRoute element={UnderwritingDashboard} allowedRoles={["Admin", "UW"]} />} />
             <Route path="operations" element={<ProtectedRoute element={OperationsDashboard} allowedRoles={["Admin", "Operations"]} />} />
             <Route path="telecallers" element={<ProtectedRoute element={TelecallersDashboard} allowedRoles={["Admin", "Telecaller"]} />} />
-            <Route path="kam" element={<ProtectedRoute element={KamDashboard} allowedRoles={["Admin", "KAM"]} />} />
+            <Route path="kam" element={<ProtectedRoute element={KAMDashboard} allowedRoles={["Admin", "KAM"]} />} />
             <Route path="banker" element={<ProtectedRoute element={BankerDashboard} allowedRoles={["Admin", "Banker"]} />} />
             <Route path="client" element={<ProtectedRoute element={UserDashboard} allowedRoles={["Individual"]} />} />
             <Route path="profile" element={<ProtectedRoute element={Profile} allowedRoles={["Admin", "UW", "Operations", "Telecaller", "KAM", "Banker", "Individual"]} />} />
+            <Route path="manage-banks" element={<ProtectedRoute element={ManageBanks} allowedRoles={["Admin", "Operations"]} />} />
+            <Route path="usermanagement" element={<ProtectedRoute element={UserManagement} allowedRoles={["Admin"]} />} />
+            <Route path="users-dashboard" element={<ProtectedRoute element={UsersDashboard} allowedRoles={["Admin"]} />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
 

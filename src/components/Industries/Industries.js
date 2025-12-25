@@ -4,24 +4,24 @@ import Particle from "../Particle";
 import { useBackground } from "../../context/BackgroundContext";
 
 // IMPORT IMAGES
-import packagingImg from "../../Assets/industries/Packaging 2.mp4";
-import pharmaImg from "../../Assets/industries/Packaging 2.mp4";
-import consultancyImg from "../../Assets/industries/Packaging 2.mp4";
-import techImg from "../../Assets/industries/Packaging 2.mp4";
-import schoolsImg from "../../Assets/industries/Packaging 2.mp4";
-import rawMaterialImg from "../../Assets/industries/Packaging 2.mp4";
-import marketingImg from "../../Assets/industries/Packaging 2.mp4";
-import constructionImg from "../../Assets/industries/Packaging 2.mp4";
-import edtechImg from "../../Assets/industries/Packaging 2.mp4";
-import healthcareImg from "../../Assets/industries/Packaging 2.mp4";
-import manufacturingImg from "../../Assets/industries/Packaging 2.mp4";
-import retailImg from "../../Assets/industries/Packaging 2.mp4";
-import solarImg from "../../Assets/industries/Packaging 2.mp4";
-import defenceImg from "../../Assets/industries/Packaging 2.mp4";
-import fmcgImg from "../../Assets/industries/Packaging 2.mp4";
-import hotelsImg from "../../Assets/industries/Packaging 2.mp4";
-import oilgasImg from "../../Assets/industries/Packaging 2.mp4";
-import otherImg from "../../Assets/industries/Packaging 2.mp4";
+import packagingImg from "../../Assets/filtered/Packaging.jpg"
+import pharmaImg from "../../Assets/filtered/Pharma.jpg";
+import consultancyImg from "../../Assets/filtered/Consultaancy.jpg";
+import techImg from "../../Assets/filtered/Tech Industries.jpg";
+import schoolsImg from "../../Assets/filtered/Schools and Colleges.jpg";
+import rawMaterialImg from "../../Assets/filtered/Commodities .jpg";
+import marketingImg from "../../Assets/filtered/Marketing E-commerce.jpg";
+import constructionImg from "../../Assets/filtered/Constructions and Contractors.jpg";
+import edtechImg from "../../Assets/filtered/Ed-tech Industries.jpg";
+import healthcareImg from "../../Assets/filtered/Healthcare Industries .jpg";
+import manufacturingImg from "../../Assets/filtered/Manufacturing Industries.jpg";
+import retailImg from "../../Assets/filtered/Retail&Wholesale.jpg";
+import solarImg from "../../Assets/filtered/Wind and solar industries.jpg";
+import defenceImg from "../../Assets/filtered/Defence & Govt Sectors.jpg";
+import fmcgImg from "../../Assets/filtered/FMCG.jpg";
+import hotelsImg from "../../Assets/filtered/Entertainment and Lifestyle.jpg";
+import oilgasImg from "../../Assets/filtered/Oil&Gas Industries.jpg";
+import otherImg from "../../Assets/filtered/Venture capitalists_Seed Funding.jpg";
 
 // INDUSTRY DESCRIPTIONS
 const industryDescriptions = {

@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { FaRegCommentDots } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import apiFetch from '../../utils/api';
+import ProvisionalDocsModal from "./ProvisionalDocsModal";
 
 // Only these statuses for banker
-const STATUS_OPTIONS = ["OPEN","Approved", "Rejected"];
+const STATUS_OPTIONS = ["OPEN", "ACCEPT", "REJECT", "LOGIN", "PD", "SANCTIONED", "DISBURSEMENT", "DONE"];
 const COLUMN_WIDTHS = [220, 180, 180, 220, 200, 180, 180, 140];
 
 export default function BankerDashboard() {
@@ -19,10 +20,15 @@ export default function BankerDashboard() {
   // For chat-like banker comments
   const [commentText, setCommentText] = useState("");
   const [toast, setToast] = useState("");
+  // Provisional Docs Modal
+  const [provisionalDocsModal, setProvisionalDocsModal] = useState({ open: false, caseid: null });
+  const handleProvisionalDocsOpen = (caseid) => setProvisionalDocsModal({ open: true, caseid });
+  const handleProvisionalDocsClose = () => setProvisionalDocsModal({ open: false, caseid: null });
 
-  useEffect(() => {
-    setLoading(true);
-    setError("");
+  const baseUrl = "http://13.60.218.94:5001/api";
+  // const baseUrl = "http://localhost:5001/api";
+
+  const fetchCases = () => {
     apiFetch("/cases", { method: "GET", token })
       .then(res => {
         const list = Array.isArray(res.cases) ? res.cases : Array.isArray(res) ? res : [];
@@ -30,27 +36,32 @@ export default function BankerDashboard() {
       })
       .catch(err => setError(err.message || "Failed to load cases."))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchCases();
   }, [token]);
 
-// Update status
-const handleStatusChange = (caseid, value) => {
-  setStatusLoading(caseid);
-  setError("");
-  apiFetch(`/cases/${caseid}/status`, {
-    method: "PATCH",
-    token,
-    body: { status: value }
-  })
-    .then(() => {
-      setCases(prev =>
-        prev.map(c => c.caseid === caseid ? { ...c, status: value } : c)
-      );
-      setToast(`Status updated to '${value}' for case ${caseid}`);
-      setTimeout(() => setToast(""), 3000);
+  // Update status
+  const handleStatusChange = (caseid, value) => {
+    setStatusLoading(caseid);
+    setError("");
+    apiFetch(`/cases/${caseid}/bankstatus`, {
+      method: "PATCH",
+      token,
+      body: { status: value }
     })
-    .catch(err => setError(err.message || "Failed to update status"))
-    .finally(() => setStatusLoading(null));
-};
+      .then(() => {
+        setCases(prev =>
+          prev.map(c => c.caseid === caseid ? { ...c, status: value } : c)
+        );
+        setToast(`Status updated to '${value}' for case ${caseid}`);
+        fetchCases(); // Refresh to get latest data
+        setTimeout(() => setToast(""), 3000);
+      })
+      .catch(err => setError(err.message || "Failed to update status"))
+      .finally(() => setStatusLoading(null));
+  };
 
   // Open/close modals
   const handleCommentOpen = (caseid) => setCommentModal({ open: true, caseid });
@@ -58,6 +69,9 @@ const handleStatusChange = (caseid, value) => {
 
   const handleDocsOpen = (caseid) => setDocsModal({ open: true, caseid });
   const handleDocsClose = () => setDocsModal({ open: false, caseid: null });
+
+  const getDownloadUrl = (filename) => baseUrl + `/documents/downloadNew/${filename}`;
+
 
   return (
     <div style={{ padding: "32px 48px 24px 48px", background: "#f8fafd", minHeight: "100vh" }}>
@@ -168,7 +182,7 @@ const handleStatusChange = (caseid, value) => {
             <div style={{ padding: "13px 10px" }}>{c.spocname || c.poc || "-"}</div>
             <div style={{ padding: "13px 10px" }}>
               <select
-                value={c.status}
+                defaultValue={c.bank_assignment_status == 'pending' ? "OPEN" : c.bank_assignment_status || "OPEN"}
                 onChange={e => handleStatusChange(c.caseid, e.target.value)}
                 style={{
                   borderRadius: 7,
@@ -188,21 +202,25 @@ const handleStatusChange = (caseid, value) => {
               {/* No save button */}
             </div>
             <div style={{ padding: "13px 10px" }}>
-              {c.onePagerDoc && c.onePagerDoc.filename ? (
-                <a
-                  href={c.onePagerDoc.url || `/documents/${c.onePagerDoc.filename}`}
-                  download
-                  style={{ color: "#3d5af1", fontWeight: 600, textDecoration: "underline" }}
-                  title={c.onePagerDoc.filename}
-                >
-                  {c.onePagerDoc.filename}
-                </a>
-              ) : (
-                <span style={{ color: "#bbb" }}>Not uploaded</span>
-              )}
+              {(() => {
+                const onePagerDoc = c.documents?.find(doc => doc.doctype === "onePager");
+                return onePagerDoc ? (
+                  <a
+                    href={getDownloadUrl(onePagerDoc.url || `${onePagerDoc.filename}`)}
+                    download
+                    style={{ color: "#3d5af1", fontWeight: 600, textDecoration: "underline" }}
+                    title={onePagerDoc.filename}
+                  >
+                    View OnePager
+                  </a>
+                ) : (
+                  <span style={{ color: "#bbb" }}>Not uploaded</span>
+                );
+              })()}
             </div>
+
             <div style={{ padding: "13px 10px" }}>
-              {c.status === "Approved" ? (
+              {!["OPEN", "REJECT"].includes(c.bank_assignment_status) ? (
                 <a
                   href="#"
                   onClick={e => { e.preventDefault(); handleDocsOpen(c.id); }}
@@ -213,9 +231,38 @@ const handleStatusChange = (caseid, value) => {
               ) : (
                 <span style={{ color: "#bbb" }}>Not available</span>
               )}
+              &nbsp;&nbsp;&nbsp;
+              {
+                /* Add a plus symbol for requesting additional documents, upon clicking on it open ProvisionalDocsModal */
+                !["OPEN", "REJECT"].includes(c.bank_assignment_status) && (
+                  <span
+                    onClick={() => handleProvisionalDocsOpen(c.caseid)}
+                    style={{
+                      color: "#2979ff",
+                      fontWeight: 600,
+                      textDecoration: "underline",
+                      cursor: "pointer"
+                    }}
+                    title="Request Other Documents"
+                  >
+                    +
+                  </span>
+                )
+              }
             </div>
             <div style={{ padding: "13px 0px 13px 32px" }}>
-              {c.updatedat}
+              {new Date(c.updatedat).toLocaleDateString('en-US', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+              }).replace(/(\d+)/, (match) => {
+                const day = parseInt(match);
+                const suffix = day % 10 === 1 && day !== 11 ? 'st' :
+                  day % 10 === 2 && day !== 12 ? 'nd' :
+                    day % 10 === 3 && day !== 13 ? 'rd' : 'th';
+                return day + suffix;
+              })}
             </div>
             <div style={{ padding: "13px 10px" }}>
               <button
@@ -242,6 +289,17 @@ const handleStatusChange = (caseid, value) => {
           </div>
         ))}
       </div>
+
+      {
+        /* ProvisionalDocsModal can be added here if needed in future */
+        provisionalDocsModal.open && (
+          <ProvisionalDocsModal
+            show={provisionalDocsModal.open}
+            caseid={provisionalDocsModal.caseid}
+            onClose={handleProvisionalDocsClose}
+          />
+        )
+      }
 
       {/* --- Documents Modal --- */}
       {docsModal.open && (
@@ -271,8 +329,10 @@ const handleStatusChange = (caseid, value) => {
             {/* List all uploaded Part-A and Part-B documents */}
             {(() => {
               const thisCase = cases.find(c => c.id === docsModal.caseid);
-              const partADocs = thisCase?.partADocs || thisCase?.partA || [];
-              const partBDocs = thisCase?.partBDocs || thisCase?.partB || [];
+              console.log(thisCase);
+              const partADocs = thisCase?.documents?.filter(doc => doc.doctype === "partA") || [];
+              const partBDocs = thisCase?.documents?.filter(doc => doc.doctype === "partB") || [];
+              const provisionalDocs = thisCase?.documents?.filter(doc => doc.doctype === "provisional") || [];
               if ((!partADocs || !partADocs.length) && (!partBDocs || !partBDocs.length))
                 return <div style={{ color: "#bbb" }}>No documents uploaded.</div>;
               return (
@@ -283,11 +343,11 @@ const handleStatusChange = (caseid, value) => {
                       {partADocs.map((doc, idx) => (
                         <div key={idx} style={{ marginBottom: 3 }}>
                           <a
-                            href={doc.url || `/documents/${doc.filename}`}
+                            href={getDownloadUrl(doc.url || `${doc.filename}`)}
                             download
                             style={{ color: "#44a957", textDecoration: "underline", fontWeight: 500 }}
                           >
-                            {doc.filename}
+                            {doc.docname}
                           </a>
                         </div>
                       ))}
@@ -299,11 +359,27 @@ const handleStatusChange = (caseid, value) => {
                       {partBDocs.map((doc, idx) => (
                         <div key={idx} style={{ marginBottom: 3 }}>
                           <a
-                            href={doc.url || `/documents/${doc.filename}`}
+                            href={getDownloadUrl(doc.url || `${doc.filename}`)}
                             download
                             style={{ color: "#44a957", textDecoration: "underline", fontWeight: 500 }}
                           >
-                            {doc.filename}
+                            {doc.docname}
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {provisionalDocs && provisionalDocs.length > 0 && (
+                    <div style={{ marginTop: 10 }}>
+                      <div style={{ fontWeight: 600, fontSize: 15, color: "#2979ff", marginBottom: 3 }}>Other Documents</div>
+                      {provisionalDocs.map((doc, idx) => (
+                        <div key={idx} style={{ marginBottom: 3 }}>
+                          <a
+                            href={getDownloadUrl(doc.url || `${doc.filename}`)}
+                            download
+                            style={{ color: "#44a957", textDecoration: "underline", fontWeight: 500 }}
+                          >
+                            {doc.docname}
                           </a>
                         </div>
                       ))}
