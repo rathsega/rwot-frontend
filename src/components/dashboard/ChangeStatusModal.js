@@ -40,6 +40,12 @@ function ChangeStatusModal({ show, onClose, lead, onSubmit }) {
     { value: "Underwriting", label: "Underwriting" },
     { value: "One Pager", label: "One Pager" },
     { value: "No Requirement", label: "No Requirement" },
+    { value: "Rejected", label: "Rejected" },
+    { value: "Login", label: "Login" },
+    { value: "PD", label: "PD" },
+    { value: "Sanctioned", label: "Sanctioned" },
+    { value: "Disbursed", label: "Disbursed" },
+    { value: "Done", label: "Done" }
   ];
 
   return (

@@ -8,7 +8,7 @@ import apiFetch from "../../utils/api";
 import { useAuth } from "../../context/AuthContext";
 import { showSpinner, hideSpinner } from "../../utils/spinner";
 
-const baseUrl = "http://13.60.218.94:5001/api";
+const baseUrl = "https://nodeapi.rwot.in/api";
 
 const PART_A_DOCS = [
   "Last 3 years financials Along with ITR's",

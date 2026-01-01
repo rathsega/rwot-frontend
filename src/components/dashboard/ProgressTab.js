@@ -3,6 +3,7 @@ import ProgressCard from "./ProgressCard";
 import LeadDetailsModal from "./LeadDetailsModal";
 import apiFetch from "../../utils/api";
 import { useAuth } from "../../context/AuthContext";
+import { exportLeadsToExcel } from "../../services/leadExportService";
 
 // Simple Excel export using SheetJS (xlsx)
 import * as XLSX from "xlsx";
@@ -25,16 +26,8 @@ function ProgressTab({ progress, handleRefresh }) {
 
   // Export to Excel
   const handleExport = () => {
-    // Flatten comments and documents for export
-    const data = progress?.map(lead => ({
-      ...lead,
-      comments: lead.comments?.map(c => `${c.commentby}: ${c.comment}`).join(" | "),
-      documents: lead.documents?.map(d => `${d.docname} (${d.filename})`).join(" | ")
-    }));
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Leads");
-    XLSX.writeFile(wb, "leads.xlsx");
+    console.log(progress);
+    exportLeadsToExcel(progress, "progress_leads.xlsx");
   };
 
   // Fetch KAM users

@@ -5,7 +5,8 @@ import apiFetch from "../../utils/api";
 import { useAuth } from "../../context/AuthContext";
 
 // Simple Excel export using SheetJS (xlsx)
-import * as XLSX from "xlsx";
+import { exportLeadsToExcel } from "../../services/leadExportService";
+import useProducts from "../../hooks/useProducts";
 
 function LeadsTab({ leads, handleRefresh }) {
   const [selectedCard, setSelectedCard] = useState(null);
@@ -23,34 +24,12 @@ function LeadsTab({ leads, handleRefresh }) {
       .includes(search.trim().toLowerCase())
   );
 
-  // Export to Excel
+  // Export to Excel (uses global service)
   const handleExport = () => {
-    // Flatten comments and documents for export
-    const data = leads.map(lead => ({
-      ...lead,
-      comments: lead.comments?.map(c => `${c.commentby}: ${c.comment}`).join(" | "),
-      documents: lead.documents?.map(d => `${d.docname} (${d.filename})`).join(" | ")
-    }));
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Leads");
-    XLSX.writeFile(wb, "leads.xlsx");
+    exportLeadsToExcel(leads, "leads.xlsx");
   };
 
-  const [productsList, setProductsList] = useState([]);
-
-    useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                const response = await apiFetch('/banks/products', { token });
-                setProductsList(response?.products);
-            } catch (error) {
-                console.error("Error fetching products:", error);
-            }
-        };
-
-        fetchProducts();
-    }, []);
+    const { products: productsList } = useProducts();
 
     useEffect(() => {
         apiFetch("/users/getKamAndTelecallers", {

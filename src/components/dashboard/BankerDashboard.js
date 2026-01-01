@@ -25,7 +25,7 @@ export default function BankerDashboard() {
   const handleProvisionalDocsOpen = (caseid) => setProvisionalDocsModal({ open: true, caseid });
   const handleProvisionalDocsClose = () => setProvisionalDocsModal({ open: false, caseid: null });
 
-  const baseUrl = "http://13.60.218.94:5001/api";
+  const baseUrl = "https://nodeapi.rwot.in/api";
   // const baseUrl = "http://localhost:5001/api";
 
   const fetchCases = () => {

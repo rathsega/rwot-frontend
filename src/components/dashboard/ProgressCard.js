@@ -10,6 +10,7 @@ import { MdNoteAdd } from "react-icons/md";
 import dayjs from "dayjs";
 import { formatIndianCurrency } from "../../utils/formatters";
 import ChangeStatusModal from './ChangeStatusModal';
+import useProducts from "../../hooks/useProducts";
 
 // Edit Lead Modal
 function EditLeadModal({ show, onClose, lead, onSubmit, kamUsers }) {
@@ -35,12 +36,13 @@ function EditLeadModal({ show, onClose, lead, onSubmit, kamUsers }) {
 
     const required = ["companyname", "clientname", "phonenumber", "date", "time"];
     const [formError, setFormError] = useState("");
+    const { products: productsList } = useProducts();
 
     useEffect(() => {
         if (lead) {
             const predefinedRanges = ["1-5cr", "5-25cr", "25-50cr", "50-100cr", "100+ cr"];
             const turnoverType = predefinedRanges.includes(lead.turnover) ? lead.turnover : "Others";
-            
+
             setForm({
                 companyname: lead.companyname || "",
                 clientname: lead.clientname || "",
@@ -79,21 +81,21 @@ function EditLeadModal({ show, onClose, lead, onSubmit, kamUsers }) {
         }
 
         const finalTurnover = form.turnoverType === "Others" ? form.turnover : form.turnoverType;
-        onSubmit({ ...form, turnover: finalTurnover, comments: form["new_comments"]});
+        onSubmit({ ...form, turnover: finalTurnover, comments: form["new_comments"] });
     };
 
     if (!show) return null;
 
     const styles = {
         modalOverlay: {
-            position: "fixed", 
-            top: 0, 
-            left: 0, 
-            right: 0, 
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
             bottom: 0,
-            background: "rgba(38, 47, 73, 0.25)", 
-            display: "flex", 
-            alignItems: "center", 
+            background: "rgba(38, 47, 73, 0.25)",
+            display: "flex",
+            alignItems: "center",
             justifyContent: "center",
             zIndex: 1000
         },
@@ -213,6 +215,26 @@ function EditLeadModal({ show, onClose, lead, onSubmit, kamUsers }) {
                                     style={styles.input}
                                     placeholder="Enter comments"
                                 />
+                            ) : key === "productname" ? (
+                                <select
+                                    value={form[key] || ""}
+                                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                                    style={{
+                                        width: "100%",
+                                        padding: 8,
+                                        borderRadius: 6,
+                                        border: "1.5px solid #d1d5db",
+                                        marginTop: 6,
+                                        fontSize: 15,
+                                        background: "#fff"
+                                    }}>
+                                    <option value="">Select Product</option>
+                                    {productsList?.map((p, idx) => (
+                                        <option key={idx} value={p}>
+                                            {p}
+                                        </option>
+                                    ))}
+                                </select>
                             ) : (
                                 <input
                                     type={key === "date" ? "date" : key === "requirement_amount" ? "number" : "text"}
@@ -244,16 +266,16 @@ function EditLeadModal({ show, onClose, lead, onSubmit, kamUsers }) {
 
                 {formError && <div style={{ color: "#e53935", marginTop: 10 }}>{formError}</div>}
                 <div style={{ textAlign: "right", marginTop: 16 }}>
-                    <button 
-                        onClick={handleSave} 
-                        style={{ 
-                            background: "#2979ff", 
-                            color: "#fff", 
-                            borderRadius: 8, 
-                            padding: "9px 24px", 
-                            fontWeight: 600, 
-                            border: "none", 
-                            cursor: "pointer" 
+                    <button
+                        onClick={handleSave}
+                        style={{
+                            background: "#2979ff",
+                            color: "#fff",
+                            borderRadius: 8,
+                            padding: "9px 24px",
+                            fontWeight: 600,
+                            border: "none",
+                            cursor: "pointer"
                         }}
                     >
                         Save
@@ -296,18 +318,18 @@ const ProgressCard = ({ lead, bgClass, cardClick, handleRefresh, kamUsers }) => 
     const handleEditSubmit = (updatedData) => {
         setLoading(true);
         setError("");
-        
+
         if (updatedData?.comments) {
-            updatedData.comments = Array.isArray(updatedData.comments) 
-                ? updatedData.comments 
+            updatedData.comments = Array.isArray(updatedData.comments)
+                ? updatedData.comments
                 : [updatedData.comments];
         }
 
-        if(updatedData?.new_comments){
+        if (updatedData?.new_comments) {
             updatedData.comments = updatedData.new_comments;
             delete updatedData.new_comments;
         }
-        
+
         apiFetch(`/cases/edit/${lead.caseid}`, {
             method: "PUT",
             token,
@@ -560,7 +582,7 @@ const ProgressCard = ({ lead, bgClass, cardClick, handleRefresh, kamUsers }) => 
                             <MdAddHome style={{ marginRight: 6 }} />
                         </button>}
 
-                        {['Operations', 'banker'].indexOf(user?.rolename) > -1 && ['One Pager', 'Banker Review'].includes(lead?.status) &&  <button
+                        {['Operations', 'banker'].indexOf(user?.rolename) > -1 && ['One Pager', 'Banker Review'].includes(lead?.status) && <button
                             className="lead-action-btn"
                             title="Add/Update Other Documents"
                             onClick={e => {

@@ -4,7 +4,7 @@ import { Button, Container } from "react-bootstrap";
 import Particle from "../Particle";
 import { useBackground } from "../../context/BackgroundContext";
 
-const baseUrl = "http://13.60.218.94:5001/api"
+const baseUrl = "https://nodeapi.rwot.in/api"
 
 // const baseUrl = "http://localhost:5001/api"
 

@@ -11,7 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 import MissingInfoModal from "../MissingInfoModal";
 import { showSpinner, hideSpinner } from "../../utils/spinner";
 
-const baseUrl = "http://13.60.218.94:5001/api"
+const baseUrl = "https://nodeapi.rwot.in/api"
 
 // const baseUrl = "http://localhost:5001/api"
 

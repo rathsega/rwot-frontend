@@ -55,7 +55,7 @@ export default function OperationsDashboard() {
 
     // Check if case is cold (inactive for more than 48 hours)
     const isColdCase = (caseItem) => {
-        return caseItem.status.toLowerCase() !== "open" && caseItem.status.toLowerCase() !== "no requirement" &&  caseItem.status.toLowerCase() !== "done" && caseItem.status.toLowerCase() !== "reject" &&
+        return caseItem.status.toLowerCase() !== "open" && caseItem.status.toLowerCase() !== "no requirement" &&  caseItem.status.toLowerCase() !== "done" && caseItem.status.toLowerCase() !== "reject" && caseItem.status.toLowerCase() !== "meeting done" &&
             caseItem.status_updated_on &&
             dayjs().diff(dayjs(caseItem.status_updated_on), "hour") > 48;
     };
