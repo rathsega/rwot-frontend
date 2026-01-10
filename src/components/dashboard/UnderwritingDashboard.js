@@ -9,8 +9,7 @@ import { FaSearch } from "react-icons/fa";
 import { showSpinner, hideSpinner } from "../../utils/spinner";
 import dayjs from "dayjs";
 
-// const baseUrl = "http://localhost:5001/api";
-const baseUrl = "https://nodeapi.rwot.in/api"
+const baseUrl = process.env.REACT_APP_API_BASE_URL;
 
 const PART_A_DOCS = [
   "Last 3 years financials Along with ITR's",

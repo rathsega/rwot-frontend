@@ -11,9 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 import MissingInfoModal from "../MissingInfoModal";
 import { showSpinner, hideSpinner } from "../../utils/spinner";
 
-const baseUrl = "https://nodeapi.rwot.in/api"
-
-// const baseUrl = "http://localhost:5001/api"
+const baseUrl = process.env.REACT_APP_API_BASE_URL;
 
 const PART_A_DOCS = [
   "Last 3 years financials Along with ITR’s",

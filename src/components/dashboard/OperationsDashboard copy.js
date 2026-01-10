@@ -6,9 +6,7 @@ import apiFetch from "../../utils/api";
 import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 
-// const baseUrl = "http://localhost:5001/api";
-
-const baseUrl = "https://nodeapi.rwot.in/api"
+const baseUrl = process.env.REACT_APP_API_BASE_URL;
 
 const PART_A_DOCS = [
   "Last 3 years financials Along with ITR’s",

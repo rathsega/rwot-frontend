@@ -4,9 +4,7 @@ import { Button, Container } from "react-bootstrap";
 import Particle from "../Particle";
 import { useBackground } from "../../context/BackgroundContext";
 
-const baseUrl = "https://nodeapi.rwot.in/api"
-
-// const baseUrl = "http://localhost:5001/api"
+const baseUrl = process.env.REACT_APP_API_BASE_URL;
 
 function Contact() {
   const { setBgMode } = useBackground();
