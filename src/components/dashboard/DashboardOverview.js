@@ -472,9 +472,9 @@ const DashboardOverview = () => {
         <thead>
           <tr>
             <th>Company</th>
-            <th>Product</th>
             <th>Assigned KAM</th>
             <th>Telecaller</th>
+            <th>Meeting Done Date</th>
             <th>Stage</th>
             <th>Bank</th>
             <th>Comments</th>
@@ -485,7 +485,6 @@ const DashboardOverview = () => {
           {cases.map((c, i) => (
             <tr key={i}>
               <td>{c.companyname || "--"}</td>
-              <td>{c.productname || "--"}</td>
               <td>{(() => {
                 const kamAssignment = c.assignments?.find(assignment =>
                   assignment.assigned_to_role === "KAM"
@@ -498,6 +497,7 @@ const DashboardOverview = () => {
                 );
                 return telecallerAssignment ? telecallerAssignment.assigned_to_name : "--";
               })()}</td>
+              <td>{c?.meeting_done_date || "--"}</td>
               <td>{c.status || "--"}</td>
               <td>{c?.bank_assignments?.map(element => (
                 <p key={element.id}>{element.bank_name} - {element.status}</p>
