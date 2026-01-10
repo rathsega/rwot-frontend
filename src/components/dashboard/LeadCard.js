@@ -257,56 +257,186 @@ function EditLeadModal({ show, onClose, lead, onSubmit, kamUsers }) {
     );
 }
 
-// Simple modal for product/amount input
-function ProductRequirementModal({ show, onClose, onSubmit, productname, requirement_amount, productsList }) {
-    const [product, setProduct] = useState(productname || "");
-    const [amount, setAmount] = useState(requirement_amount || "");
+// Modal for multiple products/amounts with description
+function ProductRequirementModal({ show, onClose, onSubmit, existingProducts, productsList }) {
+    const [products, setProducts] = useState([{ product: "", amount: "" }]);
+    const [description, setDescription] = useState("");
+
+    // Initialize with existing products if available
+    useEffect(() => {
+        if (existingProducts && existingProducts.length > 0) {
+            setProducts(existingProducts.map(p => ({
+                product: p.productname || p.product || "",
+                amount: p.requirement_amount || p.amount || ""
+            })));
+            setDescription(existingProducts[0]?.description || "");
+        } else {
+            setProducts([{ product: "", amount: "" }]);
+            setDescription("");
+        }
+    }, [existingProducts, show]);
+
+    const handleAddProduct = () => {
+        setProducts([...products, { product: "", amount: "" }]);
+    };
+
+    const handleRemoveProduct = (index) => {
+        if (products.length > 1) {
+            setProducts(products.filter((_, i) => i !== index));
+        }
+    };
+
+    const handleProductChange = (index, field, value) => {
+        const updated = [...products];
+        updated[index][field] = value;
+        setProducts(updated);
+    };
+
+    const isValid = products.every(p => p.product && p.amount) && products.length > 0;
 
     if (!show) return null;
 
     return (
         <div className="lead-details-modal-overlay">
-            <div className="lead-details-modal" style={{ minWidth: 340, maxWidth: 400 }}>
-                <h3 style={{ marginTop: 0 }}>Update Product & Requirement Amount</h3>
+            <div className="lead-details-modal" style={{ minWidth: 420, maxWidth: 550, maxHeight: "85vh", overflowY: "auto" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                    <h3 style={{ margin: 0 }}>Update Products & Requirements</h3>
+                    <button 
+                        onClick={onClose} 
+                        style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#555" }}
+                    >
+                        <FaTimes />
+                    </button>
+                </div>
+                
                 <div style={{ marginBottom: 16 }}>
-                    <label style={{ fontWeight: 600 }}>Product Name</label>
-                    <select
-                        value={product}
-                        onChange={e => setProduct(e.target.value)}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                        <label style={{ fontWeight: 600, fontSize: 15 }}>Products & Amounts</label>
+                        <button
+                            type="button"
+                            onClick={handleAddProduct}
+                            style={{
+                                padding: "6px 12px",
+                                borderRadius: 6,
+                                border: "none",
+                                background: "#10b981",
+                                color: "#fff",
+                                fontWeight: 600,
+                                cursor: "pointer",
+                                fontSize: 13
+                            }}
+                        >
+                            + Add Product
+                        </button>
+                    </div>
+                    
+                    {products.map((item, index) => (
+                        <div 
+                            key={index} 
+                            style={{ 
+                                display: "flex", 
+                                gap: 10, 
+                                marginBottom: 12, 
+                                padding: 12, 
+                                background: "#f8fafc", 
+                                borderRadius: 8,
+                                border: "1px solid #e2e8f0"
+                            }}
+                        >
+                            <div style={{ flex: 1 }}>
+                                <label style={{ fontWeight: 500, fontSize: 13, color: "#64748b" }}>Product</label>
+                                <select
+                                    value={item.product}
+                                    onChange={e => handleProductChange(index, "product", e.target.value)}
+                                    style={{
+                                        width: "100%",
+                                        padding: 8,
+                                        borderRadius: 6,
+                                        border: "1.5px solid #d1d5db",
+                                        marginTop: 4,
+                                        fontSize: 14,
+                                        background: "#fff"
+                                    }}
+                                >
+                                    <option value="">Select product</option>
+                                    {productsList?.map((p, idx) => (
+                                        <option key={idx} value={p}>
+                                            {p}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ fontWeight: 500, fontSize: 13, color: "#64748b" }}>Amount</label>
+                                <input
+                                    type="number"
+                                    value={item.amount}
+                                    onChange={e => handleProductChange(index, "amount", e.target.value)}
+                                    style={{ 
+                                        width: "100%", 
+                                        padding: 8, 
+                                        borderRadius: 6, 
+                                        border: "1.5px solid #d1d5db", 
+                                        marginTop: 4,
+                                        fontSize: 14
+                                    }}
+                                    placeholder="Enter amount"
+                                />
+                            </div>
+                            {products.length > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemoveProduct(index)}
+                                    style={{
+                                        alignSelf: "flex-end",
+                                        padding: "8px 10px",
+                                        borderRadius: 6,
+                                        border: "none",
+                                        background: "#ef4444",
+                                        color: "#fff",
+                                        cursor: "pointer",
+                                        marginBottom: 2
+                                    }}
+                                    title="Remove"
+                                >
+                                    <FaTimes />
+                                </button>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                <div style={{ marginBottom: 20 }}>
+                    <label style={{ fontWeight: 600, fontSize: 15 }}>Requirement Description</label>
+                    <textarea
+                        value={description}
+                        onChange={e => setDescription(e.target.value)}
                         style={{
                             width: "100%",
-                            padding: 8,
+                            padding: 10,
                             borderRadius: 6,
                             border: "1.5px solid #d1d5db",
                             marginTop: 6,
-                            fontSize: 15,
-                            background: "#fff"
+                            fontSize: 14,
+                            minHeight: 100,
+                            resize: "vertical",
+                            fontFamily: "inherit"
                         }}
-                    >
-                        <option value="">Select product</option>
-                        {productsList?.map((p, idx) => (
-                            <option key={idx} value={p}>
-                                {p}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <div style={{ marginBottom: 16 }}>
-                    <label style={{ fontWeight: 600 }}>Requirement Amount</label>
-                    <input
-                        type="number"
-                        value={amount}
-                        onChange={e => setAmount(e.target.value)}
-                        style={{ width: "100%", padding: 8, borderRadius: 6, border: "1.5px solid #d1d5db", marginTop: 6 }}
-                        placeholder="Enter amount"
+                        placeholder="Enter detailed description about the requirement..."
                     />
                 </div>
+
                 <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
-                    <button onClick={onClose} style={{ padding: "8px 16px", borderRadius: 6, border: "none", background: "#6f6767ff", fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                    <button 
+                        onClick={onClose} 
+                        style={{ padding: "10px 20px", borderRadius: 6, border: "none", background: "#6f6767ff", color: "#fff", fontWeight: 600, cursor: "pointer" }}
+                    >
+                        Cancel
+                    </button>
                     <button
-                        onClick={() => onSubmit(product, amount)}
-                        style={{ padding: "8px 16px", borderRadius: 6, border: "none", background: "#2979ff", color: "#fff", fontWeight: 600, cursor: "pointer" }}
-                        disabled={!product || !amount}
+                        onClick={() => onSubmit(products, description)}
+                        style={{ padding: "10px 20px", borderRadius: 6, border: "none", background: "#2979ff", color: "#fff", fontWeight: 600, cursor: "pointer" }}
+                        disabled={!isValid}
                     >
                         Save & Update
                     </button>
@@ -330,13 +460,13 @@ const LeadCard = ({ lead, bgClass, cardClick, handleRefresh, productsList, kamUs
     // Check if user is KAM or Operations
     const canEdit = user?.rolename === "KAM" || user?.rolename === "Operations";
 
-    const updateCaseStatus = (leadId, status, productname, requirement_amount) => {
+    const updateCaseStatus = (leadId, status, products, description) => {
         setLoading(true);
         setMessage("");
         apiFetch(`/cases/${leadId}/status`, {
             method: "PATCH",
             token,
-            body: JSON.stringify({ status, productname, requirement_amount })
+            body: JSON.stringify({ status, products, description })
         })
             .then((res) => {
                 handleRefresh && handleRefresh();
@@ -444,7 +574,7 @@ const LeadCard = ({ lead, bgClass, cardClick, handleRefresh, productsList, kamUs
                             title="No Requirement"
                             onClick={e => {
                                 e.stopPropagation();
-                                updateCaseStatus(lead?.caseid, "No Requirement", "", "");
+                                updateCaseStatus(lead?.caseid, "No Requirement", [], "");
                             }}
                             disabled={loading}
                         >
@@ -471,12 +601,11 @@ const LeadCard = ({ lead, bgClass, cardClick, handleRefresh, productsList, kamUs
             <ProductRequirementModal
                 show={showModal}
                 onClose={() => setShowModal(false)}
-                productname={lead.productname}
-                requirement_amount={lead.requirement_amount}
+                existingProducts={lead.product_requirements || []}
                 productsList={productsList}
-                onSubmit={(product, amount) => {
+                onSubmit={(products, description) => {
                     setShowModal(false);
-                    updateCaseStatus(lead?.caseid, "Meeting Done", product, amount);
+                    updateCaseStatus(lead?.caseid, "Meeting Done", products, description);
                 }}
             />
             <EditLeadModal
