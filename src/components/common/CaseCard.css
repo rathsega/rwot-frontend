@@ -1,0 +1,182 @@
+/* CaseCard Component - Colorful Card Design */
+
+.case-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 16px 20px;
+    border: 2px solid #e5e7eb;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 120px;
+}
+
+.case-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+}
+
+/* Stale Indicator (48+ hours no update) */
+.case-card.stale {
+    border-left: 4px solid #ef4444;
+}
+
+.stale-indicator {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    background: #fef2f2;
+    border: 2px solid #fecaca;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ef4444;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+/* Status Row - Top */
+.status-row {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.status-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #ffffff;
+}
+
+/* Client Name - Main Focus */
+.client-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+    line-height: 1.4;
+    word-break: break-word;
+    flex: 1;
+}
+
+/* KAM Info */
+.kam-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.kam-info svg {
+    color: #9ca3af;
+}
+
+/* Action Buttons */
+.card-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.card-action-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.card-action-btn:hover {
+    transform: scale(1.1);
+    filter: brightness(0.95);
+}
+
+.card-action-btn svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+/* Grid Layout for Cards Container */
+.case-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    padding: 12px 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .case-card {
+        padding: 14px 16px;
+        gap: 10px;
+        min-height: 100px;
+    }
+
+    .client-name {
+        font-size: 1rem;
+    }
+
+    .status-tag {
+        padding: 3px 10px;
+        font-size: 0.65rem;
+    }
+
+    .card-action-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .case-cards-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .case-card {
+        padding: 12px 14px;
+    }
+
+    .client-name {
+        font-size: 0.95rem;
+    }
+
+    .card-actions {
+        gap: 6px;
+    }
+
+    .card-action-btn {
+        width: 34px;
+        height: 34px;
+    }
+
+    .case-cards-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+}

@@ -181,113 +181,44 @@ export default function KAMDashboard() {
             </div>
 
             {/* Filters */}
-            <div style={{
-                display: "flex",
-                justifyContent: "center",
-                margin: "20px 0",
-                gap: "20px",
-                alignItems: "center"
-            }}>
+            <div className="filter-container">
                 {/* Lead Filter Toggle - Only show when Leads tab is active */}
                 {activeTab === "leads" && (
-                    <div style={{
-                        display: "flex",
-                        background: "#f1f3f4",
-                        borderRadius: "25px",
-                        padding: "4px",
-                        gap: "4px"
-                    }}>
+                    <div className="date-filter-group">
                         <button
                             onClick={() => setLeadFilter("today")}
-                            style={{
-                                padding: "8px 16px",
-                                border: "none",
-                                borderRadius: "20px",
-                                background: leadFilter === "today" ? "#1d4ed8" : "transparent",
-                                color: leadFilter === "today" ? "#fff" : "#666",
-                                fontWeight: "600",
-                                fontSize: "13px",
-                                cursor: "pointer",
-                                transition: "all 0.3s ease",
-                                whiteSpace: "nowrap"
-                            }}
+                            className={`date-filter-btn ${leadFilter === "today" ? "active" : ""}`}
                         >
                             Today ({formatDate(0)}) - {leadCounts.today}
                         </button>
                         <button
                             onClick={() => setLeadFilter("tomorrow")}
-                            style={{
-                                padding: "8px 16px",
-                                border: "none",
-                                borderRadius: "20px",
-                                background: leadFilter === "tomorrow" ? "#1d4ed8" : "transparent",
-                                color: leadFilter === "tomorrow" ? "#fff" : "#666",
-                                fontWeight: "600",
-                                fontSize: "13px",
-                                cursor: "pointer",
-                                transition: "all 0.3s ease",
-                                whiteSpace: "nowrap"
-                            }}
+                            className={`date-filter-btn ${leadFilter === "tomorrow" ? "active" : ""}`}
                         >
                             Tomorrow ({formatDate(1)}) - {leadCounts.tomorrow}
                         </button>
                         <button
                             onClick={() => setLeadFilter("dayAfterTomorrow")}
-                            style={{
-                                padding: "8px 16px",
-                                border: "none",
-                                borderRadius: "20px",
-                                background: leadFilter === "dayAfterTomorrow" ? "#1d4ed8" : "transparent",
-                                color: leadFilter === "dayAfterTomorrow" ? "#fff" : "#666",
-                                fontWeight: "600",
-                                fontSize: "13px",
-                                cursor: "pointer",
-                                transition: "all 0.3s ease",
-                                whiteSpace: "nowrap"
-                            }}
+                            className={`date-filter-btn ${leadFilter === "dayAfterTomorrow" ? "active" : ""}`}
                         >
                             Day After ({formatDate(2)}) - {leadCounts.dayAfterTomorrow}
                         </button>
                         <button
                             onClick={() => setLeadFilter("rest")}
-                            style={{
-                                padding: "8px 16px",
-                                border: "none",
-                                borderRadius: "20px",
-                                background: leadFilter === "rest" ? "#1d4ed8" : "transparent",
-                                color: leadFilter === "rest" ? "#fff" : "#666",
-                                fontWeight: "600",
-                                fontSize: "13px",
-                                cursor: "pointer",
-                                transition: "all 0.3s ease",
-                                whiteSpace: "nowrap"
-                            }}
+                            className={`date-filter-btn ${leadFilter === "rest" ? "active" : ""}`}
                         >
-                            Rest Leads - {leadCounts.rest}
+                            Rest - {leadCounts.rest}
                         </button>
                     </div>
                 )}
 
                 {/* Status Filter Dropdown - Only show when Progress tab is active */}
                 {activeTab === "progress" && (
-                    <div style={{ minWidth: "250px" }}>
+                    <div className="status-filter-container">
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            style={{
-                                padding: "10px 15px",
-                                border: "2px solid #e2e8f0",
-                                borderRadius: "12px",
-                                fontSize: "14px",
-                                fontWeight: "500",
-                                background: "#fff",
-                                cursor: "pointer",
-                                width: "100%",
-                                outline: "none",
-                                transition: "border-color 0.2s ease"
-                            }}
-                            onFocus={(e) => e.target.style.borderColor = "#1d4ed8"}
-                            onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
+                            className="status-filter-select"
                         >
                             <option value="">All Statuses ({progress.length})</option>
                             {Object.entries(statusCounts)

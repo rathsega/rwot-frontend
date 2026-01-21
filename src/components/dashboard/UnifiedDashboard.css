@@ -1,0 +1,137 @@
+/* Unified Dashboard Styles */
+.unified-dashboard {
+    padding: 20px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* Tab Navigation */
+.dashboard-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    padding: 8px;
+    background: #f8fafc;
+    border-radius: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.dashboard-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border: none;
+    background: transparent;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.dashboard-tab:hover {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.dashboard-tab.active {
+    background: #3b82f6;
+    color: white;
+}
+
+.dashboard-tab.active .tab-count {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+}
+
+.tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    background: #e2e8f0;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #475569;
+}
+
+/* Error State */
+.dashboard-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    background: #fef2f2;
+    border-radius: 16px;
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.dashboard-error p {
+    color: #dc2626;
+    font-weight: 500;
+    margin-bottom: 16px;
+}
+
+.dashboard-error button {
+    padding: 10px 24px;
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.dashboard-error button:hover {
+    background: #b91c1c;
+}
+
+/* Content Area */
+.dashboard-content {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .unified-dashboard {
+        padding: 12px;
+    }
+
+    .dashboard-tabs {
+        padding: 6px;
+        gap: 4px;
+    }
+
+    .dashboard-tab {
+        padding: 10px 14px;
+        font-size: 0.875rem;
+    }
+
+    .dashboard-content {
+        padding: 16px;
+        border-radius: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-tabs {
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+    }
+
+    .dashboard-tab {
+        flex: 0 0 auto;
+    }
+}
