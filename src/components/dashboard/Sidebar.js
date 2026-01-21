@@ -1,3 +1,4 @@
+import React from "react";
 import {
   FaUserCircle,
   FaChevronLeft,
@@ -9,7 +10,8 @@ import {
   FaUserCheck,
   FaIdBadge,
   FaRegUser,
-  FaSignOutAlt
+  FaSignOutAlt,
+  FaBars
 } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -43,6 +45,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [showMobileSidebar, setShowMobileSidebar] = React.useState(false);
 
   const getFilteredLinks = () => {
     if (!user) return [];
@@ -51,79 +54,143 @@ export default function Sidebar({ collapsed, setCollapsed }) {
     return navLinks.filter(link => allowedKeys.includes(link.key));
   };
 
+  // Responsive: show breadcrumb toggle on mobile
   return (
-    <div
-      style={{
-        width: collapsed ? 80 : 230,
-        background: "#181B2A",
-        color: "#fff",
-        minHeight: "100vh",
-        transition: "width 0.3s",
-        boxShadow: "2px 0 12px #0001",
-        display: "flex",
-        flexDirection: "column",
-        position: "relative",
-        zIndex: 10
-      }}
-    >
-      {/* Collapse/Expand Toggle */}
+    <>
       <button
-        onClick={() => setCollapsed((c) => !c)}
+        className="sidebar-mobile-toggle"
+        aria-label={showMobileSidebar ? "Collapse sidebar" : "Expand sidebar"}
         style={{
-          position: "absolute",
-          top: 16,
-          right: collapsed ? -24 : -16,
-          width: 32,
-          height: 32,
-          background: "#23243B",
-          color: "#fff",
-          border: "none",
-          borderRadius: "50%",
-          boxShadow: "0 1px 4px #0002",
-          cursor: "pointer",
-          zIndex: 11
+          display: 'none',
+          position: 'fixed',
+          top: 14,
+          left: 14,
+          zIndex: 1200,
+          background: '#f8fafc',
+          borderRadius: '50%',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+          padding: '10px',
+          cursor: 'pointer',
+          border: 'none',
+          outline: 'none',
+          transition: 'background 0.2s',
         }}
-        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        onClick={() => setShowMobileSidebar(!showMobileSidebar)}
       >
-        {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
+        <FaBars style={{ fontSize: '1.5em', color: '#2563eb', verticalAlign: 'middle' }} />
       </button>
+      <div
+        className="sidebar-main"
+        style={{
+          width: collapsed ? 80 : 230,
+          background: "#181B2A",
+          color: "#fff",
+          minHeight: "100vh",
+          transition: "width 0.3s",
+          boxShadow: "2px 0 12px #0001",
+          display: "flex",
+          flexDirection: "column",
+          position: "relative",
+          zIndex: 10,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+        }}
+      >
+        {/* Collapse/Expand Toggle (desktop only) */}
+        <button
+          onClick={() => setCollapsed((c) => !c)}
+          style={{
+            position: "absolute",
+            top: 16,
+            right: collapsed ? -24 : -16,
+            width: 32,
+            height: 32,
+            background: "#23243B",
+            color: "#fff",
+            border: "none",
+            borderRadius: "50%",
+            boxShadow: "0 1px 4px #0002",
+            cursor: "pointer",
+            zIndex: 11,
+            display: 'block',
+          }}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
+        </button>
 
-      {/* Avatar & App name */}
-      <div style={{ textAlign: "center", marginTop: 40, marginBottom: collapsed ? 18 : 24 }}>
-        <FaUserCircle size={collapsed ? 32 : 52} style={{ marginBottom: 6 }} />
-        {!collapsed && (
-          <>
-            <div style={{ fontSize: 14, color: "#C2C2D1" }}>RWOT</div>
-          </>
-        )}
-      </div>
+        {/* Avatar & App name */}
+        <div style={{ textAlign: "center", marginTop: 40, marginBottom: collapsed ? 18 : 24 }}>
+          <FaUserCircle size={collapsed ? 32 : 52} style={{ marginBottom: 6 }} />
+          {!collapsed && (
+            <>
+              <div style={{ fontSize: 14, color: "#C2C2D1" }}>RWOT</div>
+            </>
+          )}
+        </div>
 
-      {/* Nav links */}
-      <nav style={{ flex: 1 }}>
-        {getFilteredLinks().map(link => (
+        {/* Nav links */}
+        <nav style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+          {getFilteredLinks().map(link => (
+            <SidebarLink
+              key={link.key}
+              to={link.route}
+              icon={link.icon}
+              collapsed={collapsed}
+              label={link.label}
+              active={location.pathname === link.route}
+              navigate={navigate}
+            />
+          ))}
+        </nav>
+
+        {/* Logout */}
+        <div style={{ margin: "18px 0", marginTop: "auto" }}>
           <SidebarLink
-            key={link.key}
-            to={link.route}
-            icon={link.icon}
+            to="/logout"
+            icon={<FaSignOutAlt />}
             collapsed={collapsed}
-            label={link.label}
-            active={location.pathname === link.route}
+            label="Logout"
             navigate={navigate}
           />
-        ))}
-      </nav>
-
-      {/* Logout */}
-      <div style={{ margin: "18px 0", marginTop: "auto" }}>
-        <SidebarLink
-          to="/logout"
-          icon={<FaSignOutAlt />}
-          collapsed={collapsed}
-          label="Logout"
-          navigate={navigate}
-        />
+        </div>
       </div>
-    </div>
+      <style>{`
+        @media (max-width: 900px) {
+          .sidebar-main {
+            position: fixed !important;
+            left: ${showMobileSidebar ? "0" : "-260px"};
+            top: 0;
+            width: 230px !important;
+            min-width: 0 !important;
+            height: 100vh !important;
+            z-index: 1201;
+            box-shadow: 2px 0 12px #0002;
+            background: #181B2A;
+            transition: left 0.3s;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+          }
+          .sidebar-mobile-toggle {
+            display: block !important;
+            background: #f8fafc !important;
+            color: #2563eb !important;
+            border-radius: 50% !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.10) !important;
+            padding: 10px !important;
+            border: none !important;
+          }
+          .sidebar-main::-webkit-scrollbar {
+            width: 6px;
+            background: #23243B;
+          }
+          .sidebar-main::-webkit-scrollbar-thumb {
+            background: #23243B;
+            border-radius: 3px;
+          }
+        }
+      `}</style>
+    </>
   );
 }
 
