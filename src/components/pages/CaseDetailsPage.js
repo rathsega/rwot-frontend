@@ -271,7 +271,7 @@ const CaseDetailsPage = () => {
             </div>
 
             {/* Status Bar */}
-            <div className="case-status-bar">
+            <div className="case-status-bar responsive-status-bar">
                 <div className="status-info">
                     <span className="status-label">Status:</span>
                     <span className={`status-badge status-${caseData.status?.toLowerCase().replace(/\s+/g, '-')}`}>
@@ -279,27 +279,18 @@ const CaseDetailsPage = () => {
                     </span>
                 </div>
                 <div className="status-actions">
-
                     <button 
                         className="btn-no-requirement"
                         onClick={() => handleStatusUpdate("No Requirement")}
                     >
                         <FaBan /> No Requirement
                     </button>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <label style={{ fontWeight: '600', color: '#555', whiteSpace: 'nowrap' }}>Change Status:</label>
+                    <div className="status-change-group">
+                        <label className="status-change-label">Change Status:</label>
                         <select 
                             className="status-dropdown"
                             value={caseData.status}
                             onChange={(e) => handleStatusUpdate(e.target.value)}
-                            style={{
-                                padding: '8px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid #ddd',
-                                fontSize: '14px',
-                                cursor: 'pointer',
-                                minWidth: '180px'
-                            }}
                         >
                             {STATUS_OPTIONS.map(opt => (
                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
