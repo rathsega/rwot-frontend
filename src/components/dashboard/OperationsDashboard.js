@@ -116,7 +116,7 @@ export default function OperationsDashboard() {
                 let sanctioned = activeCases.filter(item => ["sanctioned"].includes(item.status?.toLowerCase()));
                 setSanctioned(sanctioned);
 
-                let disbursement = activeCases.filter(item => ["disbursement"].includes(item.status?.toLowerCase()));
+                let disbursement = activeCases.filter(item => ["disbursed"].includes(item.status?.toLowerCase()));
                 setDisbursement(disbursement);
 
                 let noRequirement = activeCases.filter(item => item.status?.toLowerCase() === "no requirement");
