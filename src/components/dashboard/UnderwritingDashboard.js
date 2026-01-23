@@ -288,6 +288,7 @@ export default function UnderwritingDashboard() {
 
       if (docType === "onePager") {
         updateWorkFlow(caseId, "One Pager");
+        fetchCases();
       }
 
       // Refresh selected case
