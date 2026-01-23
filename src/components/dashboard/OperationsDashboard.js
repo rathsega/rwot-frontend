@@ -49,13 +49,13 @@ export default function OperationsDashboard() {
     const [noRequirement, setNoRequirement] = useState([]);
 
     const checkBankAssignmentStatus = (bankAssignments, status) => {
-        if (!bankAssignments || bankAssignments.length === 0) return false;
+        if (!bankAssignments || bankAssignments.length === 0) return true;
         return bankAssignments.some(assignment => assignment.status?.toLowerCase() === status);
     }
 
     // Check if case is cold (inactive for more than 48 hours)
     const isColdCase = (caseItem) => {
-        return caseItem.status.toLowerCase() !== "open" && caseItem.status.toLowerCase() !== "no requirement" &&  caseItem.status.toLowerCase() !== "done" && caseItem.status.toLowerCase() !== "reject" && caseItem.status.toLowerCase() !== "meeting done" &&
+        return caseItem.status.toLowerCase() !== "open" && caseItem.status.toLowerCase() !== "no requirement" &&  caseItem.status.toLowerCase() !== "done" && caseItem.status.toLowerCase() !== "rejected" && caseItem.status.toLowerCase() !== "meeting done" &&
             caseItem.status_updated_on &&
             dayjs().diff(dayjs(caseItem.status_updated_on), "hour") > 48;
     };
@@ -104,7 +104,7 @@ export default function OperationsDashboard() {
                 let accept = activeCases.filter(item => ["banker review", "one pager"].includes(item.status?.toLowerCase()) && checkBankAssignmentStatus(item?.bank_assignments, "accept"));
                 setAccept(accept);
 
-                let reject = activeCases.filter(item => ["reject"].includes(item.status?.toLowerCase()) && checkBankAssignmentStatus(item?.bank_assignments, "reject"));
+                let reject = activeCases.filter(item => ["rejected"].includes(item.status?.toLowerCase()) && checkBankAssignmentStatus(item?.bank_assignments, "rejected"));
                 setReject(reject);
 
                 let pd = activeCases.filter(item => ["pd"].includes(item.status?.toLowerCase()));

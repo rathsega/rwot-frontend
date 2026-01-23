@@ -5,7 +5,7 @@ import apiFetch from '../../utils/api';
 import ProvisionalDocsModal from "./ProvisionalDocsModal";
 
 // Only these statuses for banker
-const STATUS_OPTIONS = ["OPEN", "ACCEPT", "REJECT", "LOGIN", "PD", "SANCTIONED", "DISBURSEMENT", "DONE"];
+const STATUS_OPTIONS = ["OPEN", "ACCEPT", "REJECTED", "LOGIN", "PD", "SANCTIONED", "DISBURSEMENT", "DONE"];
 const COLUMN_WIDTHS = [220, 180, 180, 220, 200, 180, 180, 140];
 
 export default function BankerDashboard() {
@@ -219,7 +219,7 @@ export default function BankerDashboard() {
             </div>
 
             <div style={{ padding: "13px 10px" }}>
-              {!["OPEN", "REJECT"].includes(c.bank_assignment_status) ? (
+              {!["OPEN", "REJECTED"].includes(c.bank_assignment_status) ? (
                 <a
                   href="#"
                   onClick={e => { e.preventDefault(); handleDocsOpen(c.id); }}
@@ -233,7 +233,7 @@ export default function BankerDashboard() {
               &nbsp;&nbsp;&nbsp;
               {
                 /* Add a plus symbol for requesting additional documents, upon clicking on it open ProvisionalDocsModal */
-                !["OPEN", "REJECT"].includes(c.bank_assignment_status) && (
+                !["OPEN", "REJECTED"].includes(c.bank_assignment_status) && (
                   <span
                     onClick={() => handleProvisionalDocsOpen(c.caseid)}
                     style={{
