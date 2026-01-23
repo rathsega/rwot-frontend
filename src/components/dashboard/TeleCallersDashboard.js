@@ -31,16 +31,18 @@ export default function TelecallersDashboard() {
     modalOverlay: {
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
       background: "rgba(38, 47, 73, 0.25)", display: "flex", alignItems: "center", justifyContent: "center",
-      zIndex: 1000
+      zIndex: 1000,
+      padding: "20px"
     },
     modal: {
       background: "#fff",
-      padding: 24,
+      padding: "24px",
       borderRadius: 16,
       boxShadow: "0 8px 42px 0 rgba(18,38,63,0.17)",
-      minWidth: 420,
+      width: "100%",
       maxWidth: 820,
-      maxHeight: "90vh"
+      maxHeight: "90vh",
+      overflowY: "auto"
     },
     input: {
       width: "100%",
@@ -50,7 +52,16 @@ export default function TelecallersDashboard() {
       fontSize: 15,
       background: "#f8fafd",
       fontWeight: 500,
-      outline: "none"
+      outline: "none",
+      boxSizing: "border-box"
+    },
+    container: {
+      padding: "16px",
+    },
+    '@media (minWidth: 768px)': {
+      container: {
+        padding: "32px"
+      }
     }
   };
 
@@ -328,30 +339,54 @@ export default function TelecallersDashboard() {
   };
 
   return (
-    <div style={{ padding: 32 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <h2 style={{ margin: 0 }}>Telecaller Dashboard</h2>
+    <div style={{ padding: "16px" }}>
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "space-between", 
+        alignItems: "center", 
+        marginBottom: 20,
+        flexWrap: "wrap",
+        gap: "12px"
+      }}>
+        <h2 style={{ margin: 0, fontSize: "clamp(1.25rem, 4vw, 1.75rem)" }}>Telecaller Dashboard</h2>
         <button
           onClick={() => handleModalOpen()}
-          style={{ background: "#1d4ed8", color: "white", border: "none", borderRadius: 6, padding: "10px 20px", fontWeight: 600 }}
+          style={{ 
+            background: "#1d4ed8", 
+            color: "white", 
+            border: "none", 
+            borderRadius: 6, 
+            padding: "10px 20px", 
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            whiteSpace: "nowrap"
+          }}
         >
           <FaPlus style={{ marginRight: 8 }} /> Add Lead
         </button>
       </div>
 
-      <div className="dashboard-filters" style={{ display: "flex", gap: "10px" }}>
-        <div style={{ position: "relative" }}>
+      <div className="dashboard-filters" style={{ 
+        display: "flex", 
+        gap: "10px",
+        flexWrap: "wrap",
+        marginBottom: "16px"
+      }}>
+        <div style={{ position: "relative", flex: "1 1 200px", minWidth: "200px" }}>
           <input
             type="text"
             placeholder="Search cases..."
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
             style={{
+              width: "100%",
               paddingRight: "35px",
               padding: "8px",
               borderRadius: "4px",
               border: "1px solid #ddd",
-              minWidth: "200px"
+              boxSizing: "border-box"
             }}
           />
           <FaSearch style={{
@@ -363,13 +398,18 @@ export default function TelecallersDashboard() {
           }} />
         </div>
 
-        <label>
-          Stage:
+        <label style={{ display: "flex", flexDirection: "column", flex: "1 1 150px", minWidth: "150px" }}>
+          <span style={{ fontSize: "14px", marginBottom: "4px" }}>Stage:</span>
           <select
             className="filter-select"
             name="stage"
             value={filters.status}
             onChange={(e) => handleFilterChange("status", e.target.value)}
+            style={{
+              padding: "8px",
+              borderRadius: "4px",
+              border: "1px solid #ddd"
+            }}
           >
             <option value="">All</option>
             <option value="Open">Open</option>
@@ -384,13 +424,18 @@ export default function TelecallersDashboard() {
           </select>
         </label>
 
-        <label>
-          Time:
+        <label style={{ display: "flex", flexDirection: "column", flex: "1 1 150px", minWidth: "150px" }}>
+          <span style={{ fontSize: "14px", marginBottom: "4px" }}>Time:</span>
           <select
             className="filter-select"
             name="time"
             value={filters.time}
             onChange={(e) => handleFilterChange("time", e.target.value)}
+            style={{
+              padding: "8px",
+              borderRadius: "4px",
+              border: "1px solid #ddd"
+            }}
           >
             <option value="">All</option>
             <option value="Today">Today</option>
@@ -403,12 +448,17 @@ export default function TelecallersDashboard() {
           </select>
         </label>
 
-        <label>
-          Assignee:
+        <label style={{ display: "flex", flexDirection: "column", flex: "1 1 150px", minWidth: "150px" }}>
+          <span style={{ fontSize: "14px", marginBottom: "4px" }}>Assignee:</span>
           <select
             className="filter-select"
             value={filters.assignee}
             onChange={(e) => handleFilterChange("assignee", e.target.value)}
+            style={{
+              padding: "8px",
+              borderRadius: "4px",
+              border: "1px solid #ddd"
+            }}
           >
             <option value="">All</option>
             {Array.from(new Set(originalCases.map((c) => c.assigned_to_name || c.assignee).filter(Boolean))).map((name, idx) => (
@@ -417,22 +467,38 @@ export default function TelecallersDashboard() {
           </select>
         </label>
 
-        <div>
+        <div style={{ display: "flex", alignItems: "flex-end" }}>
           <button
             onClick={clearAllFilters}
-            style={{ background: "#463939ff", color: "white", border: "none", borderRadius: 4, padding: "6px 12px", cursor: "pointer" }}
+            style={{ 
+              background: "#463939ff", 
+              color: "white", 
+              border: "none", 
+              borderRadius: 4, 
+              padding: "8px 12px", 
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              height: "fit-content"
+            }}
           >
             Clear Filters
           </button>
         </div>
       </div>
-      <div>
+      <div style={{ marginBottom: "12px", fontWeight: 500, color: "#555" }}>
         Showing {cases.length} of {originalCases.length} cases
       </div>
 
       {/* Table */}
-      <div style={{ marginTop: 24, borderRadius: 12, background: "#fff", boxShadow: "0 4px 16px rgba(0,0,0,0.05)", overflow: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div style={{ 
+        marginTop: 24, 
+        borderRadius: 12, 
+        background: "#fff", 
+        boxShadow: "0 4px 16px rgba(0,0,0,0.05)", 
+        overflowX: "auto",
+        WebkitOverflowScrolling: "touch"
+      }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "900px" }}>
           <thead style={{ background: "#f1f4f9", fontWeight: 600 }}>
             <tr>
               <th style={{ textAlign: "left", padding: "12px" }}></th>
@@ -494,14 +560,41 @@ export default function TelecallersDashboard() {
       {modal.open && (
         <div style={styles.modalOverlay}>
           <div style={styles.modal}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <h3 style={{ fontWeight: 700 }}>Add/Edit Lead</h3>
-              <button onClick={() => setModal({ open: false, caseData: null })} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#555" }}>
+            <div style={{ 
+              display: "flex", 
+              justifyContent: "space-between", 
+              alignItems: "center", 
+              marginBottom: 14,
+              position: "sticky",
+              top: 0,
+              background: "#fff",
+              paddingBottom: "10px",
+              borderBottom: "1px solid #eee"
+            }}>
+              <h3 style={{ fontWeight: 700, margin: 0, fontSize: "clamp(1.125rem, 3vw, 1.5rem)" }}>
+                {modal.caseData ? "Edit Lead" : "Add Lead"}
+              </h3>
+              <button 
+                onClick={() => setModal({ open: false, caseData: null })} 
+                style={{ 
+                  background: "none", 
+                  border: "none", 
+                  fontSize: 20, 
+                  cursor: "pointer", 
+                  color: "#555",
+                  padding: "8px"
+                }}
+              >
                 <FaTimes />
               </button>
             </div>
 
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+            <div style={{ 
+              display: "flex", 
+              flexWrap: "wrap", 
+              gap: 16,
+              marginTop: "16px"
+            }}>
               {[
                 ["Company Name", "companyname"],
                 ["Client Name", "clientname"],
@@ -516,8 +609,16 @@ export default function TelecallersDashboard() {
                 ["Time", "time"],
                 ["Comments", "comments"]
               ].map(([label, key]) => (
-                <div key={key} style={{ flex: "1 1 44%" }}>
-                  <label style={{ fontWeight: 600 }}>
+                <div key={key} style={{ 
+                  flex: "1 1 calc(50% - 8px)",
+                  minWidth: "200px"
+                }}>
+                  <label style={{ 
+                    fontWeight: 600, 
+                    display: "block", 
+                    marginBottom: "6px",
+                    fontSize: "14px"
+                  }}>
                     {label} {required.includes(key) && <span style={{ color: "#e53935" }}>*</span>}
                   </label>
                   {key === "time" ? (
@@ -580,8 +681,18 @@ export default function TelecallersDashboard() {
                 </div>
               ))}
 
-              <div style={{ flex: "1 1 44%" }}>
-                <label style={{ fontWeight: 600 }}>Assign KAM</label>
+              <div style={{ 
+                flex: "1 1 calc(50% - 8px)",
+                minWidth: "200px"
+              }}>
+                <label style={{ 
+                  fontWeight: 600, 
+                  display: "block", 
+                  marginBottom: "6px",
+                  fontSize: "14px"
+                }}>
+                  Assign KAM <span style={{ color: "#e53935" }}>*</span>
+                </label>
                 <select
                   value={form.assignedKam || ""}
                   onChange={(e) => setForm({ ...form, assignedKam: e.target.value })}
@@ -595,10 +706,49 @@ export default function TelecallersDashboard() {
               </div>
             </div>
 
-            {formError && <div style={{ color: "#e53935", marginTop: 10 }}>{formError}</div>}
-            <div style={{ textAlign: "right", marginTop: 16 }}>
-              <button onClick={handleSave} style={{ background: "#2979ff", color: "#fff", borderRadius: 8, padding: "9px 24px", fontWeight: 600, border: "none" }}>
-                Save
+            {formError && <div style={{ 
+              color: "#e53935", 
+              marginTop: 10, 
+              padding: "10px", 
+              background: "#ffebee", 
+              borderRadius: "6px",
+              fontSize: "14px"
+            }}>{formError}</div>}
+            <div style={{ 
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "10px",
+              marginTop: 16,
+              paddingTop: "16px",
+              borderTop: "1px solid #eee"
+            }}>
+              <button 
+                onClick={() => setModal({ open: false, caseData: null })} 
+                style={{ 
+                  background: "#f5f5f5", 
+                  color: "#333", 
+                  borderRadius: 8, 
+                  padding: "9px 24px", 
+                  fontWeight: 600, 
+                  border: "1px solid #ddd",
+                  cursor: "pointer"
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSave} 
+                style={{ 
+                  background: "#2979ff", 
+                  color: "#fff", 
+                  borderRadius: 8, 
+                  padding: "9px 24px", 
+                  fontWeight: 600, 
+                  border: "none",
+                  cursor: "pointer"
+                }}
+              >
+                {modal.caseData ? "Update" : "Save"}
               </button>
             </div>
           </div>
@@ -607,8 +757,30 @@ export default function TelecallersDashboard() {
 
       {commentsModal.open && (
         <div style={styles.modalOverlay}>
-          <div style={{ ...styles.modal, minWidth: 420 }}>
-            <h3 style={{ marginBottom: 10 }}>Comments</h3>
+          <div style={styles.modal}>
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 10,
+              paddingBottom: "10px",
+              borderBottom: "1px solid #eee"
+            }}>
+              <h3 style={{ margin: 0, fontSize: "clamp(1.125rem, 3vw, 1.5rem)" }}>Comments</h3>
+              <button 
+                onClick={() => setCommentsModal({ open: false, caseid: null })} 
+                style={{ 
+                  background: "none", 
+                  border: "none", 
+                  fontSize: 20, 
+                  cursor: "pointer", 
+                  color: "#555",
+                  padding: "8px"
+                }}
+              >
+                <FaTimes />
+              </button>
+            </div>
             <div style={{ maxHeight: 200, overflowY: "auto", marginBottom: 12 }}>
               {cases.find(c => c.caseid === commentsModal.caseid)?.comments?.map((cm, i) => (
                 <div key={i} style={{ background: "#f8fafd", padding: 10, borderRadius: 6, marginBottom: 6 }}>
@@ -620,21 +792,39 @@ export default function TelecallersDashboard() {
                 </div>
               )) || <div>No comments</div>}
             </div>
-            <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <input
                 value={commentText}
                 onChange={e => setCommentText(e.target.value)}
                 placeholder="Add comment..."
                 style={styles.input}
               />
-
-            </div>
-            <div style={{ textAlign: "right", marginTop: 12, justifyContent: "space-between" }}>
-              <button
-                onClick={handleCommentSend}
-                style={{ background: "#2979ff", color: "#fff", border: "none", borderRadius: 6, padding: "8px 20px", fontWeight: 600 }}
-              >Send</button>
-              <button onClick={() => setCommentsModal({ open: false, caseid: null })} style={{ background: "#fff", color: "#000", border: "1px solid #ccc", padding: "6px 18px", borderRadius: 6 }}>Close</button>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, flexWrap: "wrap" }}>
+                <button 
+                  onClick={() => setCommentsModal({ open: false, caseid: null })} 
+                  style={{ 
+                    background: "#f5f5f5", 
+                    color: "#333", 
+                    border: "1px solid #ddd", 
+                    padding: "8px 20px", 
+                    borderRadius: 6,
+                    fontWeight: 600,
+                    cursor: "pointer"
+                  }}
+                >Close</button>
+                <button
+                  onClick={handleCommentSend}
+                  style={{ 
+                    background: "#2979ff", 
+                    color: "#fff", 
+                    border: "none", 
+                    borderRadius: 6, 
+                    padding: "8px 20px", 
+                    fontWeight: 600,
+                    cursor: "pointer"
+                  }}
+                >Send</button>
+              </div>
             </div>
           </div>
         </div>
