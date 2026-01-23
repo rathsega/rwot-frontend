@@ -48,6 +48,10 @@ const STATUS_OPTIONS = [
     { value: "Done", label: "Done" },
 ];
 
+const ONE_PAGER_DOCS = [
+    "One Pager"
+];
+
 // --- Permission and Readonly Logic ---
 const DOC_PERMISSIONS = {
     Operations: { partA: { download: true, upload: true, delete: true }, partB: { download: true, upload: true, delete: true }, provisional: { download: true, upload: true, delete: true }, onePager: { download: true, upload: false, delete: false } },
@@ -55,7 +59,8 @@ const DOC_PERMISSIONS = {
     Individual: { partA: { download: true, upload: true, delete: true }, partB: { download: true, upload: true, delete: true }, provisional: { download: true, upload: true, delete: true }, onePager: { download: true, upload: false, delete: false } },
     Underwriting: { partA: { download: true, upload: false, delete: false }, partB: { download: true, upload: false, delete: false }, provisional: { download: true, upload: false, delete: false }, onePager: { download: true, upload: true, delete: true } },
     Banker: { partA: { download: true, upload: false, delete: false }, partB: { download: true, upload: false, delete: false }, provisional: { download: true, upload: false, delete: false }, onePager: { download: true, upload: false, delete: false } },
-    KAM: { partA: { download: true, upload: true, delete: false }, partB: { download: true, upload: true, delete: false }, provisional: { download: true, upload: false, delete: false }, onePager: { download: true, upload: false, delete: false } },
+    KAM: { partA: { download: true, upload: false, delete: false }, partB: { download: true, upload: false, delete: false }, provisional: { download: true, upload: false, delete: false }, onePager: { download: true, upload: false, delete: false } },
+    Telecaller: { partA: { download: true, upload: false, delete: false }, partB: { download: true, upload: false, delete: false }, provisional: { download: true, upload: false, delete: false }, onePager: { download: true, upload: false, delete: false } },
     Admin: { partA: { download: true, upload: true, delete: true }, partB: { download: true, upload: true, delete: true }, provisional: { download: true, upload: true, delete: true }, onePager: { download: true, upload: false, delete: false } },
 };
 
@@ -94,11 +99,13 @@ const CaseDetailsPage = () => {
     const [productModal, setProductModal] = useState(false);
     const [productsList, setProductsList] = useState([]);
     const [kamUsers, setKamUsers] = useState([]);
+    const [provisionalDocs, setProvisionalDocs] = useState([]);
 
     useEffect(() => {
         fetchCaseDetails();
         fetchProductsList();
         fetchKamUsers();
+        fetchProvisionalDocs();
     }, [caseid]);
 
     const fetchCaseDetails = async () => {
@@ -136,6 +143,15 @@ const CaseDetailsPage = () => {
             setKamUsers(users.filter(u => u.rolename === "KAM"));
         } catch (err) {
             console.error("Failed to fetch KAM users:", err);
+        }
+    };
+
+    const fetchProvisionalDocs = async () => {
+        try {
+            const res = await apiFetch(`/cases/${caseid}/provisional-documents`, { method: "GET", token });
+            setProvisionalDocs(res.documents || []);
+        } catch (err) {
+            console.error("Failed to fetch provisional documents:", err);
         }
     };
 
@@ -215,6 +231,18 @@ const CaseDetailsPage = () => {
         (caseData?.documents || []).find(d => d.docname === docname && d.doctype === doctype);
 
     const canEdit = user?.rolename === "KAM" || user?.rolename === "Operations" || user?.rolename === "Admin";
+    
+    const canUploadDoc = (doctype) => {
+        const userRole = user?.rolename;
+        const permissions = DOC_PERMISSIONS[userRole];
+        return permissions?.[doctype]?.upload || false;
+    };
+    
+    const canDownloadDoc = (doctype) => {
+        const userRole = user?.rolename;
+        const permissions = DOC_PERMISSIONS[userRole];
+        return permissions?.[doctype]?.download || false;
+    };
 
     if (loading) {
         return (
@@ -595,15 +623,20 @@ const CaseDetailsPage = () => {
                                             <div key={doc} className={`docs-mini-item ${uploaded ? 'uploaded' : ''}`}>
                                                 <span className="mini-doc-name" title={doc}>{doc.length > 25 ? doc.slice(0, 25) + '...' : doc}</span>
                                                 {uploaded ? (
-                                                    <a href={`${baseUrl}/documents/downloadNew/${uploaded.filename}`} target="_blank" rel="noreferrer" className="mini-download">
-                                                        <FaCloudDownloadAlt />
-                                                    </a>
+                                                    canDownloadDoc("partA") && (
+                                                        <a href={`${baseUrl}/documents/downloadNew/${uploaded.filename}`} target="_blank" rel="noreferrer" className="mini-download">
+                                                            <FaCloudDownloadAlt />
+                                                        </a>
+                                                    )
                                                 ) : (
-                                                    <label className="mini-upload">
-                                                        <FaCloudUploadAlt />
-                                                        <input type="file" hidden onChange={(e) => handleFileUpload(doc, "partA", e.target.files[0])} />
-                                                    </label>
+                                                    canUploadDoc("partA") && (
+                                                        <label className="mini-upload">
+                                                            <FaCloudUploadAlt />
+                                                            <input type="file" hidden onChange={(e) => handleFileUpload(doc, "partA", e.target.files[0])} />
+                                                        </label>
+                                                    )
                                                 )}
+                                                {uploaded && !canDownloadDoc("partA") && <FaLock style={{ color: "#999", fontSize: "14px" }} />}
                                             </div>
                                         );
                                     })}
@@ -621,15 +654,84 @@ const CaseDetailsPage = () => {
                                             <div key={doc} className={`docs-mini-item ${uploaded ? 'uploaded' : ''}`}>
                                                 <span className="mini-doc-name" title={doc}>{doc.length > 25 ? doc.slice(0, 25) + '...' : doc}</span>
                                                 {uploaded ? (
-                                                    <a href={`${baseUrl}/documents/downloadNew/${uploaded.filename}`} target="_blank" rel="noreferrer" className="mini-download">
-                                                        <FaCloudDownloadAlt />
-                                                    </a>
+                                                    canDownloadDoc("partB") && (
+                                                        <a href={`${baseUrl}/documents/downloadNew/${uploaded.filename}`} target="_blank" rel="noreferrer" className="mini-download">
+                                                            <FaCloudDownloadAlt />
+                                                        </a>
+                                                    )
                                                 ) : (
-                                                    <label className="mini-upload">
-                                                        <FaCloudUploadAlt />
-                                                        <input type="file" hidden onChange={(e) => handleFileUpload(doc, "partB", e.target.files[0])} />
-                                                    </label>
+                                                    canUploadDoc("partB") && (
+                                                        <label className="mini-upload">
+                                                            <FaCloudUploadAlt />
+                                                            <input type="file" hidden onChange={(e) => handleFileUpload(doc, "partB", e.target.files[0])} />
+                                                        </label>
+                                                    )
                                                 )}
+                                                {uploaded && !canDownloadDoc("partB") && <FaLock style={{ color: "#999", fontSize: "14px" }} />}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            {provisionalDocs.length > 0 && (
+                                <div className="docs-summary-section">
+                                    <span className="docs-summary-title">Provisional</span>
+                                    <div className="docs-summary-stats">
+                                        <span className="docs-uploaded">{provisionalDocs.filter(d => getUploadedDoc(d.document_name, "provisional")).length}/{provisionalDocs.length} uploaded</span>
+                                    </div>
+                                    <div className="docs-mini-list">
+                                        {provisionalDocs.map(doc => {
+                                            const uploaded = getUploadedDoc(doc.document_name, "provisional");
+                                            return (
+                                                <div key={doc.id} className={`docs-mini-item ${uploaded ? 'uploaded' : ''}`}>
+                                                    <span className="mini-doc-name" title={doc.document_name}>{doc.document_name.length > 25 ? doc.document_name.slice(0, 25) + '...' : doc.document_name}</span>
+                                                    {uploaded ? (
+                                                        canDownloadDoc("provisional") && (
+                                                            <a href={`${baseUrl}/documents/downloadNew/${uploaded.filename}`} target="_blank" rel="noreferrer" className="mini-download">
+                                                                <FaCloudDownloadAlt />
+                                                            </a>
+                                                        )
+                                                    ) : (
+                                                        canUploadDoc("provisional") && (
+                                                            <label className="mini-upload">
+                                                                <FaCloudUploadAlt />
+                                                                <input type="file" hidden onChange={(e) => handleFileUpload(doc.document_name, "provisional", e.target.files[0])} />
+                                                            </label>
+                                                        )
+                                                    )}
+                                                    {uploaded && !canDownloadDoc("provisional") && <FaLock style={{ color: "#999", fontSize: "14px" }} />}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                            <div className="docs-summary-section">
+                                <span className="docs-summary-title">One Pager</span>
+                                <div className="docs-summary-stats">
+                                    <span className="docs-uploaded">{ONE_PAGER_DOCS.filter(d => getUploadedDoc(d, "onePager")).length}/{ONE_PAGER_DOCS.length} uploaded</span>
+                                </div>
+                                <div className="docs-mini-list">
+                                    {ONE_PAGER_DOCS.map(doc => {
+                                        const uploaded = getUploadedDoc(doc, "onePager");
+                                        return (
+                                            <div key={doc} className={`docs-mini-item ${uploaded ? 'uploaded' : ''}`}>
+                                                <span className="mini-doc-name" title={doc}>{doc.length > 25 ? doc.slice(0, 25) + '...' : doc}</span>
+                                                {uploaded ? (
+                                                    canDownloadDoc("onePager") && (
+                                                        <a href={`${baseUrl}/documents/downloadNew/${uploaded.filename}`} target="_blank" rel="noreferrer" className="mini-download">
+                                                            <FaCloudDownloadAlt />
+                                                        </a>
+                                                    )
+                                                ) : (
+                                                    canUploadDoc("onePager") && (
+                                                        <label className="mini-upload">
+                                                            <FaCloudUploadAlt />
+                                                            <input type="file" hidden onChange={(e) => handleFileUpload(doc, "onePager", e.target.files[0])} />
+                                                        </label>
+                                                    )
+                                                )}
+                                                {uploaded && !canDownloadDoc("onePager") && <FaLock style={{ color: "#999", fontSize: "14px" }} />}
                                             </div>
                                         );
                                     })}
