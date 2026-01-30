@@ -107,6 +107,26 @@ const UsersDashboard = () => {
           end: now.endOf('year') 
         };
       
+      case "financialyear":
+        // Indian Financial Year: April 1 to March 31
+        const fyStart = now.month() >= 3 
+          ? now.month(3).startOf('month') 
+          : now.subtract(1, 'year').month(3).startOf('month');
+        const fyEnd = now.month() >= 3 
+          ? now.add(1, 'year').month(2).endOf('month') 
+          : now.month(2).endOf('month');
+        return { start: fyStart, end: fyEnd };
+      
+      case "lastfinancialyear":
+        // Previous Indian Financial Year
+        const lastFyStart = now.month() >= 3 
+          ? now.subtract(1, 'year').month(3).startOf('month') 
+          : now.subtract(2, 'year').month(3).startOf('month');
+        const lastFyEnd = now.month() >= 3 
+          ? now.month(2).endOf('month') 
+          : now.subtract(1, 'year').month(2).endOf('month');
+        return { start: lastFyStart, end: lastFyEnd };
+      
       case "custom":
         if (dateFrom && dateTo) {
           return { 
@@ -490,6 +510,8 @@ const UsersDashboard = () => {
               <option value="thisweek">This Week</option>
               <option value="thismonth">This Month</option>
               <option value="thisyear">This Year</option>
+              <option value="financialyear">Financial Year</option>
+              <option value="lastfinancialyear">Last Financial Year</option>
               <option value="custom">Custom Range</option>
             </select>
           </div>

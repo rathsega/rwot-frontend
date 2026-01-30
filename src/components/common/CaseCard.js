@@ -28,15 +28,16 @@ const CaseCard = ({
     actions = ['view'],
     onCardClick,
     showKam = false,
-    colorIndex = 0
+    colorIndex = 0,
+    coldCaseThresholdHours = 48
 }) => {
     const navigate = useNavigate();
     const colors = cardColors[colorIndex % cardColors.length];
 
-    // Check if case is stale (no update for 48+ hours and not Open)
+    // Check if case is stale (no update for configured threshold hours and not Open)
     const isStale = caseData.status !== "Open" && 
         caseData.status_updated_on &&
-        dayjs().diff(dayjs(caseData.status_updated_on), "hour") > 48;
+        dayjs().diff(dayjs(caseData.status_updated_on), "hour") > coldCaseThresholdHours;
 
     const handleCardClick = (e) => {
         if (e.target.closest('.card-action-btn')) return;
@@ -112,7 +113,7 @@ const CaseCard = ({
         >
             {/* Stale Warning */}
             {isStale && (
-                <div className="stale-indicator" title="No update for 48+ hours">
+                <div className="stale-indicator" title={`No update for ${coldCaseThresholdHours}+ hours`}>
                     <FaExclamationTriangle size={12} />
                 </div>
             )}

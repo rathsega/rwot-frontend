@@ -20,6 +20,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import dayjs from "dayjs";
 import NoRequirement from "./Tabs/NoRequirement";
+import { useColdCaseThreshold } from "../../hooks/useSettings";
 
 export default function OperationsDashboard() {
     const [activeTab, setActiveTab] = useState("Meeting Done");
@@ -47,17 +48,18 @@ export default function OperationsDashboard() {
     const [done, setDone] = useState([]);
     const [cold, setCold] = useState([]);
     const [noRequirement, setNoRequirement] = useState([]);
+    const { coldCaseThresholdHours } = useColdCaseThreshold();
 
     const checkBankAssignmentStatus = (bankAssignments, status) => {
         if (!bankAssignments || bankAssignments.length === 0) return true;
         return bankAssignments.some(assignment => assignment.status?.toLowerCase() === status);
     }
 
-    // Check if case is cold (inactive for more than 48 hours)
+    // Check if case is cold (inactive for more than configured threshold hours)
     const isColdCase = (caseItem) => {
         return caseItem.status.toLowerCase() !== "open" && caseItem.status.toLowerCase() !== "no requirement" &&  caseItem.status.toLowerCase() !== "done" && caseItem.status.toLowerCase() !== "rejected" && caseItem.status.toLowerCase() !== "meeting done" &&
             caseItem.status_updated_on &&
-            dayjs().diff(dayjs(caseItem.status_updated_on), "hour") > 48;
+            dayjs().diff(dayjs(caseItem.status_updated_on), "hour") > coldCaseThresholdHours;
     };
 
     useEffect(() => {
@@ -124,7 +126,7 @@ export default function OperationsDashboard() {
             })
             .catch((err) => setError(err.message || "Failed to fetch cases"))
             .finally(() => setLoading(false));
-    }, [token, refreshToken]);
+    }, [token, refreshToken, coldCaseThresholdHours]);
 
     const handleRefresh = () => {
         setRefreshToken(prev => !prev);

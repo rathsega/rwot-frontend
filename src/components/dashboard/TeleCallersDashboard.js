@@ -6,9 +6,11 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FaSearch } from "react-icons/fa";
 import dayjs from "dayjs";
+import { useColdCaseThreshold } from "../../hooks/useSettings";
 
 export default function TelecallersDashboard() {
   const { token } = useAuth() || {};
+  const { coldCaseThresholdHours } = useColdCaseThreshold();
   const [cases, setCases] = useState([]);
   const [kamUsers, setKamUsers] = useState([]);
   const [modal, setModal] = useState({ open: false, caseData: null });
@@ -104,7 +106,7 @@ export default function TelecallersDashboard() {
     if(filters?.status === "Cold"){
       filtered = filtered.filter((c) =>
         c.status_updated_on &&
-                dayjs().diff(dayjs(c.status_updated_on), "hour") > 48
+                dayjs().diff(dayjs(c.status_updated_on), "hour") > coldCaseThresholdHours
       );  
     }
 

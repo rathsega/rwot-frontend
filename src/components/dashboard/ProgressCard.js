@@ -286,7 +286,7 @@ function EditLeadModal({ show, onClose, lead, onSubmit, kamUsers }) {
     );
 }
 
-const ProgressCard = ({ lead, bgClass, cardClick, handleRefresh, kamUsers }) => {
+const ProgressCard = ({ lead, bgClass, cardClick, handleRefresh, kamUsers, coldCaseThresholdHours = 48 }) => {
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState("");
     const [error, setError] = useState("");
@@ -426,7 +426,7 @@ const ProgressCard = ({ lead, bgClass, cardClick, handleRefresh, kamUsers }) => 
     };
 
     const isRedFlag = lead.status_updated_on &&
-        dayjs().diff(dayjs(lead.status_updated_on), "hour") > 48;
+        dayjs().diff(dayjs(lead.status_updated_on), "hour") > coldCaseThresholdHours;
 
     return (
         <>

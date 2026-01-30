@@ -5,11 +5,13 @@ import apiFetch from "../../utils/api";
 import dayjs from "dayjs";
 import isBetween from 'dayjs/plugin/isBetween';
 import isoWeek from 'dayjs/plugin/isoWeek';
+import { useColdCaseThreshold } from "../../hooks/useSettings";
 
 dayjs.extend(isBetween);
 dayjs.extend(isoWeek);
 
 const DashboardOverview = () => {
+  const { coldCaseThresholdHours } = useColdCaseThreshold();
   const [cases, setCases] = useState([]);
   const [originalCases, setOriginalCases] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -140,6 +142,26 @@ const DashboardOverview = () => {
           end: now.endOf('year') 
         };
       
+      case "Financial Year":
+        // Indian Financial Year: April 1 to March 31
+        const fyStart = now.month() >= 3 
+          ? now.month(3).startOf('month') 
+          : now.subtract(1, 'year').month(3).startOf('month');
+        const fyEnd = now.month() >= 3 
+          ? now.add(1, 'year').month(2).endOf('month') 
+          : now.month(2).endOf('month');
+        return { start: fyStart, end: fyEnd };
+      
+      case "Last Financial Year":
+        // Previous Indian Financial Year
+        const lastFyStart = now.month() >= 3 
+          ? now.subtract(1, 'year').month(3).startOf('month') 
+          : now.subtract(2, 'year').month(3).startOf('month');
+        const lastFyEnd = now.month() >= 3 
+          ? now.month(2).endOf('month') 
+          : now.subtract(1, 'year').month(2).endOf('month');
+        return { start: lastFyStart, end: lastFyEnd };
+      
       case "Custom":
         if (filters.dateFrom && filters.dateTo) {
           return { 
@@ -197,7 +219,7 @@ const DashboardOverview = () => {
     if(filters?.status === "Cold"){
       filtered = filtered.filter((c) =>
         c.status_updated_on &&
-        dayjs().diff(dayjs(c.status_updated_on), "hour") > 48
+        dayjs().diff(dayjs(c.status_updated_on), "hour") > coldCaseThresholdHours
       );  
     }
 
@@ -378,6 +400,8 @@ const DashboardOverview = () => {
               <option value="This Week">This Week</option>
               <option value="This Month">This Month</option>
               <option value="This Year">This Year</option>
+              <option value="Financial Year">Financial Year</option>
+              <option value="Last Financial Year">Last Financial Year</option>
               <option value="Custom">Custom Range</option>
             </select>
           </label>

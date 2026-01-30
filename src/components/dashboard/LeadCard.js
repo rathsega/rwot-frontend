@@ -446,7 +446,7 @@ function ProductRequirementModal({ show, onClose, onSubmit, existingProducts, pr
     );
 }
 
-const LeadCard = ({ lead, bgClass, cardClick, handleRefresh, productsList, kamUsers }) => {
+const LeadCard = ({ lead, bgClass, cardClick, handleRefresh, productsList, kamUsers, coldCaseThresholdHours = 48 }) => {
     console.log("Products List in LeadCard:", productsList);
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
@@ -505,7 +505,7 @@ const LeadCard = ({ lead, bgClass, cardClick, handleRefresh, productsList, kamUs
     };
 
     const isRedFlag = lead.status !== "Open" && lead.status_updated_on &&
-        dayjs().diff(dayjs(lead.status_updated_on), "hour") > 48;
+        dayjs().diff(dayjs(lead.status_updated_on), "hour") > coldCaseThresholdHours;
 
     return (
         <>

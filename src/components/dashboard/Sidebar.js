@@ -28,11 +28,12 @@ export const navLinks = [
   { key: "banker", label: "Banker Dashboard", icon: <FaRegUser />, route: "/dashboard/banker" },
   { key: "profile", label: "Profile Details", icon: <FaIdBadge />, route: "/dashboard/profile" },
   { key: "manage-banks", label: "Manage Banks", icon: <FaUserCog />, route: "/dashboard/manage-banks" },
-  { key: "user-management", label: "User Management", icon: <FaUsers />, route: "/dashboard/usermanagement" }
+  { key: "user-management", label: "User Management", icon: <FaUsers />, route: "/dashboard/usermanagement" },
+  { key: "settings", label: "Settings", icon: <FaUserCog />, route: "/dashboard/settings" }
 ];
 
 const roleKeyMap = {
-  Admin: ["dashboard", "users-dashboard", "overview", "underwriting", "operations", "telecallers", "kam", "banker", "profile", "manage-banks", "user-management"],
+  Admin: ["dashboard", "users-dashboard", "overview", "underwriting", "operations", "telecallers", "kam", "banker", "profile", "manage-banks", "user-management", "settings"],
   UW: ["underwriting", "profile"],
   Operations: ["operations", "profile", "dashboard", "manage-banks"],
   Telecaller: ["telecallers", "profile", "dashboard"],
