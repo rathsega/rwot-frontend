@@ -166,17 +166,17 @@ export default function KAMDashboard() {
                     className={`tab-button ${activeTab === "leads" ? "active" : ""}`}
                     onClick={() => handleTabChange("leads")}
                 >
-                    Leads
+                    Leads ({leads.length})
                 </button>
                 <button
                         className={`tab-button ${activeTab === "progress" ? "active" : ""}`}
                         onClick={() => handleTabChange("progress")}
                 >
-                    Progress
+                    Progress ({progress.length})
                 </button>
                 <button className={`tab-button ${activeTab === "noRequirement" ? "active" : ""}`} 
                     onClick={() => handleTabChange("noRequirement")}>
-                    No Requirement
+                    No Requirement ({noRequirement.length})
                 </button>
             </div>
 
