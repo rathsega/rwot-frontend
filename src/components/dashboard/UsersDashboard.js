@@ -592,14 +592,27 @@ const UsersDashboard = () => {
           gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
           gap: "15px"
         }}>
-          {Object.entries(stats.statusCounts).map(([status, count]) => (
-            <StatusCard 
-              key={status} 
-              status={status} 
-              count={count} 
-              onClick={() => navigate(`/dashboard/cases?status=${encodeURIComponent(status)}`)} 
-            />
-          ))}
+          {Object.entries(stats.statusCounts).map(([status, count]) => {
+            // Build navigation URL with all active filters
+            const params = new URLSearchParams();
+            params.append('status', status);
+            if (selectedUserId) params.append('userId', selectedUserId);
+            if (dateFilter && dateFilter !== 'all') params.append('dateFilter', dateFilter);
+            if (dateFilter === 'custom') {
+              if (dateFrom) params.append('dateFrom', dateFrom);
+              if (dateTo) params.append('dateTo', dateTo);
+            }
+            const navUrl = `/dashboard/cases?${params.toString()}`;
+            
+            return (
+              <StatusCard 
+                key={status} 
+                status={status} 
+                count={count} 
+                onClick={() => navigate(navUrl)} 
+              />
+            );
+          })}
         </div>
       </div>
         </>

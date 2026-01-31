@@ -13,6 +13,7 @@ const CasesListPage = () => {
     
     const statusFilter = searchParams.get('status') || '';
     const userIdFilter = searchParams.get('userId') || '';
+    const dateFilterParam = searchParams.get('dateFilter') || '';
     const dateFrom = searchParams.get('dateFrom') || '';
     const dateTo = searchParams.get('dateTo') || '';
     
@@ -21,9 +22,68 @@ const CasesListPage = () => {
     const [error, setError] = useState("");
     const [search, setSearch] = useState("");
 
+    // Calculate date range based on dateFilter parameter
+    const getDateRange = (filter) => {
+        const now = dayjs();
+        let filterStart = null;
+        let filterEnd = null;
+        
+        switch(filter) {
+            case 'today':
+                filterStart = now.startOf('day');
+                filterEnd = now.endOf('day');
+                break;
+            case 'yesterday':
+                filterStart = now.subtract(1, 'day').startOf('day');
+                filterEnd = now.subtract(1, 'day').endOf('day');
+                break;
+            case 'last7days':
+                filterStart = now.subtract(7, 'day').startOf('day');
+                filterEnd = now.endOf('day');
+                break;
+            case 'last30days':
+                filterStart = now.subtract(30, 'day').startOf('day');
+                filterEnd = now.endOf('day');
+                break;
+            case 'thisweek':
+                filterStart = now.startOf('week');
+                filterEnd = now.endOf('day');
+                break;
+            case 'thismonth':
+                filterStart = now.startOf('month');
+                filterEnd = now.endOf('day');
+                break;
+            case 'thisyear':
+                filterStart = now.startOf('year');
+                filterEnd = now.endOf('day');
+                break;
+            case 'financialyear':
+                // Financial year starts April 1st
+                filterStart = now.month() >= 3
+                    ? dayjs().month(3).date(1).startOf('day')
+                    : dayjs().subtract(1, 'year').month(3).date(1).startOf('day');
+                filterEnd = now.endOf('day');
+                break;
+            case 'lastfinancialyear':
+                filterStart = now.month() >= 3
+                    ? dayjs().subtract(1, 'year').month(3).date(1).startOf('day')
+                    : dayjs().subtract(2, 'year').month(3).date(1).startOf('day');
+                filterEnd = now.month() >= 3
+                    ? dayjs().month(3).date(1).subtract(1, 'day').endOf('day')
+                    : dayjs().subtract(1, 'year').month(3).date(1).subtract(1, 'day').endOf('day');
+                break;
+            case 'custom':
+                // Custom uses dateFrom and dateTo directly
+                break;
+            default:
+                break;
+        }
+        return { filterStart, filterEnd };
+    };
+
     useEffect(() => {
         fetchCases();
-    }, [statusFilter, userIdFilter, dateFrom, dateTo]);
+    }, [statusFilter, userIdFilter, dateFilterParam, dateFrom, dateTo]);
 
     const fetchCases = async () => {
         setLoading(true);
@@ -47,18 +107,45 @@ const CasesListPage = () => {
                 );
             }
             
-            // Apply date filters
-            if (dateFrom) {
-                const fromDate = dayjs(dateFrom).startOf('day');
-                casesData = casesData.filter(c => 
-                    dayjs(c.createddate).isAfter(fromDate) || dayjs(c.createddate).isSame(fromDate, 'day')
-                );
-            }
-            if (dateTo) {
-                const toDate = dayjs(dateTo).endOf('day');
-                casesData = casesData.filter(c => 
-                    dayjs(c.createddate).isBefore(toDate) || dayjs(c.createddate).isSame(toDate, 'day')
-                );
+            // Apply date filters based on dateFilter param or custom range
+            if (dateFilterParam && dateFilterParam !== 'all') {
+                const { filterStart, filterEnd } = getDateRange(dateFilterParam);
+                
+                if (dateFilterParam === 'custom') {
+                    // Use custom date range
+                    if (dateFrom) {
+                        const fromDate = dayjs(dateFrom).startOf('day');
+                        casesData = casesData.filter(c => 
+                            dayjs(c.createddate).isAfter(fromDate) || dayjs(c.createddate).isSame(fromDate, 'day')
+                        );
+                    }
+                    if (dateTo) {
+                        const toDate = dayjs(dateTo).endOf('day');
+                        casesData = casesData.filter(c => 
+                            dayjs(c.createddate).isBefore(toDate) || dayjs(c.createddate).isSame(toDate, 'day')
+                        );
+                    }
+                } else if (filterStart && filterEnd) {
+                    casesData = casesData.filter(c => {
+                        const caseDate = dayjs(c.createddate);
+                        return (caseDate.isAfter(filterStart) || caseDate.isSame(filterStart, 'day')) &&
+                               (caseDate.isBefore(filterEnd) || caseDate.isSame(filterEnd, 'day'));
+                    });
+                }
+            } else {
+                // Legacy support: use dateFrom/dateTo directly if no dateFilter
+                if (dateFrom) {
+                    const fromDate = dayjs(dateFrom).startOf('day');
+                    casesData = casesData.filter(c => 
+                        dayjs(c.createddate).isAfter(fromDate) || dayjs(c.createddate).isSame(fromDate, 'day')
+                    );
+                }
+                if (dateTo) {
+                    const toDate = dayjs(dateTo).endOf('day');
+                    casesData = casesData.filter(c => 
+                        dayjs(c.createddate).isBefore(toDate) || dayjs(c.createddate).isSame(toDate, 'day')
+                    );
+                }
             }
             
             setCases(casesData);
@@ -101,6 +188,30 @@ const CasesListPage = () => {
         return colors[status?.toLowerCase()] || '#6b7280';
     };
 
+    // Get filter description for display
+    const getFilterDescription = () => {
+        const parts = [];
+        if (dateFilterParam && dateFilterParam !== 'all') {
+            const filterLabels = {
+                'today': 'Today',
+                'yesterday': 'Yesterday',
+                'last7days': 'Last 7 Days',
+                'last30days': 'Last 30 Days',
+                'thisweek': 'This Week',
+                'thismonth': 'This Month',
+                'thisyear': 'This Year',
+                'financialyear': 'Financial Year',
+                'lastfinancialyear': 'Last Financial Year',
+                'custom': dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : 'Custom Range'
+            };
+            parts.push(filterLabels[dateFilterParam] || dateFilterParam);
+        }
+        if (userIdFilter) {
+            parts.push('User Filtered');
+        }
+        return parts.length > 0 ? ` (${parts.join(', ')})` : '';
+    };
+
     return (
         <div className="cases-list-page">
             {/* Header */}
@@ -111,6 +222,9 @@ const CasesListPage = () => {
                 <div className="header-info">
                     <h1>
                         {statusFilter ? `${statusFilter} Cases` : 'All Cases'}
+                        <span style={{ fontSize: '0.6em', fontWeight: 'normal', color: '#666' }}>
+                            {getFilterDescription()}
+                        </span>
                     </h1>
                     <span className="case-count">{filteredCases.length} cases found</span>
                 </div>
