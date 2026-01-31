@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FaCalendarDay, FaCalendarWeek, FaCalendarAlt, FaChartLine, FaUsers, FaHandshake, FaFileAlt, FaCheck, FaMoneyBillWave } from 'react-icons/fa';
 import apiFetch from "../../utils/api";
 
@@ -19,10 +19,28 @@ const NewDashboard = () => {
     ratioCounts: {}
   });
   const [loading, setLoading] = useState(true);
+  
+  // Date filter state
+  const [dateFilter, setDateFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
-  useEffect(() => {
+  // Fetch stats when filters change
+  const fetchStats = useCallback(() => {
     setLoading(true);
-    apiFetch("/cases/dashboard-stats", {
+    
+    // Build query params
+    const params = new URLSearchParams();
+    if (dateFilter && dateFilter !== 'all') params.append('dateFilter', dateFilter);
+    if (dateFilter === 'custom') {
+      if (dateFrom) params.append('dateFrom', dateFrom);
+      if (dateTo) params.append('dateTo', dateTo);
+    }
+    
+    const queryString = params.toString();
+    const url = `/cases/dashboard-stats${queryString ? `?${queryString}` : ''}`;
+    
+    apiFetch(url, {
       method: "GET",
       credentials: "include",
     })
@@ -31,7 +49,26 @@ const NewDashboard = () => {
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [dateFilter, dateFrom, dateTo]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  const handleDateFilterChange = (filter) => {
+    setDateFilter(filter);
+    if (filter !== "custom") {
+      setDateFrom("");
+      setDateTo("");
+    }
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setDateFilter("all");
+    setDateFrom("");
+    setDateTo("");
+  };
 
   const StatCard = ({ title, count, icon, gradient }) => (
     <div style={{
@@ -171,16 +208,177 @@ const NewDashboard = () => {
       background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
       minHeight: "100vh"
     }}>
-      <h2 style={{
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
         marginBottom: "40px",
-        color: "white",
-        textAlign: "center",
-        fontSize: "2.5em",
-        fontWeight: "300",
-        textShadow: "0 2px 4px rgba(0,0,0,0.3)"
+        flexWrap: "wrap",
+        gap: "20px"
       }}>
-        Dashboard Overview
-      </h2>
+        <h2 style={{
+          color: "white",
+          fontSize: "2.5em",
+          fontWeight: "300",
+          textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+          margin: 0
+        }}>
+          Dashboard Overview
+        </h2>
+        
+        {/* Filters Container */}
+        <div style={{
+          display: "flex",
+          gap: "15px",
+          flexWrap: "wrap",
+          alignItems: "flex-end"
+        }}>
+          {/* Date Filter Dropdown */}
+          <div style={{
+            background: "rgba(255, 255, 255, 0.95)",
+            padding: "10px 15px",
+            borderRadius: "12px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            minWidth: "200px"
+          }}>
+            <label style={{
+              display: "block",
+              fontSize: "12px",
+              fontWeight: "600",
+              color: "#666",
+              marginBottom: "5px"
+            }}>
+              Date Filter
+            </label>
+            <select
+              value={dateFilter}
+              onChange={(e) => handleDateFilterChange(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "8px 10px",
+                border: "2px solid #e2e8f0",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "500",
+                background: "#fff",
+                cursor: "pointer",
+                outline: "none",
+                transition: "border-color 0.2s ease"
+              }}
+            >
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="yesterday">Yesterday</option>
+              <option value="last7days">Last 7 Days</option>
+              <option value="last30days">Last 30 Days</option>
+              <option value="thisweek">This Week</option>
+              <option value="thismonth">This Month</option>
+              <option value="thisyear">This Year</option>
+              <option value="financialyear">Financial Year</option>
+              <option value="lastfinancialyear">Last Financial Year</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </div>
+
+          {/* Custom Date Range (Only show when "Custom Range" is selected) */}
+          {dateFilter === "custom" && (
+            <>
+              <div style={{
+                background: "rgba(255, 255, 255, 0.95)",
+                padding: "10px 15px",
+                borderRadius: "12px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                minWidth: "180px"
+              }}>
+                <label style={{
+                  display: "block",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  color: "#666",
+                  marginBottom: "5px"
+                }}>
+                  From Date
+                </label>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "8px 10px",
+                    border: "2px solid #e2e8f0",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    background: "#fff",
+                    cursor: "pointer",
+                    outline: "none",
+                    transition: "border-color 0.2s ease"
+                  }}
+                />
+              </div>
+
+              <div style={{
+                background: "rgba(255, 255, 255, 0.95)",
+                padding: "10px 15px",
+                borderRadius: "12px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                minWidth: "180px"
+              }}>
+                <label style={{
+                  display: "block",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  color: "#666",
+                  marginBottom: "5px"
+                }}>
+                  To Date
+                </label>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "8px 10px",
+                    border: "2px solid #e2e8f0",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    background: "#fff",
+                    cursor: "pointer",
+                    outline: "none",
+                    transition: "border-color 0.2s ease"
+                  }}
+                />
+              </div>
+            </>
+          )}
+
+          {/* Clear Filters Button */}
+          <button
+            onClick={clearAllFilters}
+            style={{
+              background: "#dc2626",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              padding: "10px 20px",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+              transition: "all 0.2s ease",
+              height: "fit-content",
+              alignSelf: "flex-end"
+            }}
+            onMouseOver={(e) => e.target.style.background = "#b91c1c"}
+            onMouseOut={(e) => e.target.style.background = "#dc2626"}
+          >
+            Clear Filters
+          </button>
+        </div>
+      </div>
 
       {loading ? (
         <div style={{
