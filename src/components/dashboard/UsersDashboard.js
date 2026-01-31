@@ -1,18 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaCalendarDay, FaCalendarWeek, FaCalendarAlt, FaChartLine, FaUsers, FaHandshake, FaFileAlt, FaCheck, FaMoneyBillWave } from 'react-icons/fa';
 import apiFetch from "../../utils/api";
-import dayjs from 'dayjs';
-import isBetween from 'dayjs/plugin/isBetween';
-import isoWeek from 'dayjs/plugin/isoWeek';
-
-dayjs.extend(isBetween);
-dayjs.extend(isoWeek);
 
 const UsersDashboard = () => {
   const navigate = useNavigate();
-  const [cases, setCases] = useState([]);
-  const [allCases, setAllCases] = useState([]);
   const [stats, setStats] = useState({
     today: 0,
     last7Days: 0,
@@ -25,30 +17,20 @@ const UsersDashboard = () => {
       documentsToBankerAcceptance: 0,
       bankerAcceptanceToSanction: 0,
       sanctionToDisbursement: 0
-    }
+    },
+    ratioCounts: {},
+    totalFiltered: 0
   });
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState("");
+  const [loading, setLoading] = useState(true);
   
-  // ✅ Date filter state
-  const [dateFilter, setDateFilter] = useState("all"); // all, today, yesterday, last7days, last30days, thisweek, thismonth, thisyear, custom
+  // Date filter state
+  const [dateFilter, setDateFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  useEffect(() => {
-    apiFetch("/cases", {
-      method: "GET",
-      credentials: "include",
-    })
-      .then((res) => {
-        const casesData = res.cases || res;
-        setAllCases(casesData);
-        setCases(casesData);
-        calculateStats(casesData);
-      })
-      .catch((err) => console.error(err));
-  }, []);
-
+  // Fetch users list on mount
   useEffect(() => {
     apiFetch("/users/getKamAndTelecallers", {
       method: "GET",    
@@ -61,124 +43,36 @@ const UsersDashboard = () => {
       .catch((err) => console.error(err));
   }, []);
 
-  // ✅ Apply all filters simultaneously
-  useEffect(() => {
-    applyAllFilters();
-  }, [selectedUserId, dateFilter, dateFrom, dateTo, allCases]);
-
-  const getDateRange = (filter) => {
-    const now = dayjs();
+  // Fetch stats when filters change
+  const fetchStats = useCallback(() => {
+    setLoading(true);
     
-    switch(filter) {
-      case "today":
-        return { start: now.startOf('day'), end: now.endOf('day') };
-      
-      case "yesterday":
-        return { 
-          start: now.subtract(1, 'day').startOf('day'), 
-          end: now.subtract(1, 'day').endOf('day') 
-        };
-      
-      case "last7days":
-        return { 
-          start: now.subtract(7, 'day').startOf('day'), 
-          end: now.endOf('day') 
-        };
-      
-      case "last30days":
-        return { 
-          start: now.subtract(30, 'day').startOf('day'), 
-          end: now.endOf('day') 
-        };
-      
-      case "thisweek":
-        return { 
-          start: now.startOf('isoWeek'), 
-          end: now.endOf('isoWeek') 
-        };
-      
-      case "thismonth":
-        return { 
-          start: now.startOf('month'), 
-          end: now.endOf('month') 
-        };
-      
-      case "thisyear":
-        return { 
-          start: now.startOf('year'), 
-          end: now.endOf('year') 
-        };
-      
-      case "financialyear":
-        // Indian Financial Year: April 1 to March 31
-        const fyStart = now.month() >= 3 
-          ? now.month(3).startOf('month') 
-          : now.subtract(1, 'year').month(3).startOf('month');
-        const fyEnd = now.month() >= 3 
-          ? now.add(1, 'year').month(2).endOf('month') 
-          : now.month(2).endOf('month');
-        return { start: fyStart, end: fyEnd };
-      
-      case "lastfinancialyear":
-        // Previous Indian Financial Year
-        const lastFyStart = now.month() >= 3 
-          ? now.subtract(1, 'year').month(3).startOf('month') 
-          : now.subtract(2, 'year').month(3).startOf('month');
-        const lastFyEnd = now.month() >= 3 
-          ? now.month(2).endOf('month') 
-          : now.subtract(1, 'year').month(2).endOf('month');
-        return { start: lastFyStart, end: lastFyEnd };
-      
-      case "custom":
-        if (dateFrom && dateTo) {
-          return { 
-            start: dayjs(dateFrom).startOf('day'), 
-            end: dayjs(dateTo).endOf('day') 
-          };
-        } else if (dateFrom) {
-          return { 
-            start: dayjs(dateFrom).startOf('day'), 
-            end: now.endOf('day') 
-          };
-        } else if (dateTo) {
-          return { 
-            start: dayjs('1900-01-01'), 
-            end: dayjs(dateTo).endOf('day') 
-          };
-        }
-        return null;
-      
-      case "all":
-      default:
-        return null;
+    // Build query params
+    const params = new URLSearchParams();
+    if (selectedUserId) params.append('userId', selectedUserId);
+    if (dateFilter && dateFilter !== 'all') params.append('dateFilter', dateFilter);
+    if (dateFilter === 'custom') {
+      if (dateFrom) params.append('dateFrom', dateFrom);
+      if (dateTo) params.append('dateTo', dateTo);
     }
-  };
+    
+    const queryString = params.toString();
+    const url = `/cases/user-dashboard-stats${queryString ? `?${queryString}` : ''}`;
+    
+    apiFetch(url, {
+      method: "GET",
+      credentials: "include",
+    })
+      .then((res) => {
+        setStats(res);
+      })
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
+  }, [selectedUserId, dateFilter, dateFrom, dateTo]);
 
-  const applyAllFilters = () => {
-    let filtered = [...allCases];
-
-    // Filter by user
-    if (selectedUserId) {
-      filtered = filtered.filter(case_ => {
-        return case_.assignments?.some(assignment => 
-          assignment.assigned_to_id === parseInt(selectedUserId) || 
-          assignment.assigned_to_email === users.find(u => u.id === parseInt(selectedUserId))?.email
-        ) || case_.createdby === parseInt(selectedUserId);
-      });
-    }
-
-    // Filter by date range
-    const dateRange = getDateRange(dateFilter);
-    if (dateRange) {
-      filtered = filtered.filter(case_ => {
-        const caseDate = dayjs(case_.createddate);
-        return caseDate.isBetween(dateRange.start, dateRange.end, null, '[]');
-      });
-    }
-
-    setCases(filtered);
-    calculateStats(filtered);
-  };
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   const handleUserChange = (userId) => {
     setSelectedUserId(userId);
@@ -200,112 +94,12 @@ const UsersDashboard = () => {
     setDateTo(date);
   };
 
-  // ✅ Clear all filters
+  // Clear all filters
   const clearAllFilters = () => {
     setSelectedUserId("");
     setDateFilter("all");
     setDateFrom("");
     setDateTo("");
-    setCases(allCases);
-    calculateStats(allCases);
-  };
-
-  const calculateStats = (casesData) => {
-    const now = dayjs();
-    const today = now.startOf('day');
-    const last7Days = now.subtract(7, 'day').startOf('day');
-    const last30Days = now.subtract(30, 'day').startOf('day');
-
-    const currentYear = now.year();
-    const financialYearStart = now.month() >= 3
-      ? dayjs(`${currentYear}-04-01`)
-      : dayjs(`${currentYear - 1}-04-01`);
-
-    let todayCount = 0;
-    let last7DaysCount = 0;
-    let last30DaysCount = 0;
-    let financialYearCount = 0;
-    const statusCounts = {};
-
-    let totalLeads = 0;
-    let meetingDone = 0;
-    let documentationInitiated = 0;
-    let bankerAccepted = 0;
-    let sanctioned = 0;
-    let disbursed = 0;
-
-    casesData.forEach(case_ => {
-      const caseDate = dayjs(case_.createddate || case_.date);
-
-      if (caseDate.isAfter(today)) todayCount++;
-      if (caseDate.isAfter(last7Days)) last7DaysCount++;
-      if (caseDate.isAfter(last30Days)) last30DaysCount++;
-      if (caseDate.isAfter(financialYearStart)) financialYearCount++;
-
-      const status = case_.status || 'Unknown';
-      statusCounts[status] = (statusCounts[status] || 0) + 1;
-
-      totalLeads++;
-
-      if (['Meeting Done', 'Documentation Initiated', 'Documentation In Progress',
-        'Underwriting', 'Banker Review', 'Done'].includes(status)) {
-        meetingDone++;
-      }
-
-      if (['Documentation Initiated', 'Documentation In Progress',
-        'Underwriting', 'Banker Review', 'Done'].includes(status)) {
-        documentationInitiated++;
-      }
-
-      if (case_.bank_assignments && Array.isArray(case_.bank_assignments)) {
-        const hasAcceptedBanker = case_.bank_assignments.some(ba =>
-          ba.status && ['ACCEPT', 'ACCEPTED', 'IN-PROGRESS', 'IN_PROGRESS', 'APPROVED', 'SANCTIONED', 'DISBURSEMENT'].includes(ba.status.toUpperCase())
-        );
-        if (hasAcceptedBanker) {
-          bankerAccepted++;
-        }
-
-        const hasSanctioned = case_.bank_assignments.some(ba =>
-          ba.status && ['SANCTIONED', 'DISBURSEMENT'].includes(ba.status.toUpperCase())
-        );
-        if (hasSanctioned) {
-          sanctioned++;
-        }
-
-        const hasDisbursed = case_.bank_assignments.some(ba =>
-          ba.status && ba.status.toUpperCase() === 'DISBURSEMENT'
-        );
-        if (hasDisbursed) {
-          disbursed++;
-        }
-      }
-    });
-
-    const ratios = {
-      leadsToMeeting: totalLeads > 0 ? ((meetingDone / totalLeads) * 100).toFixed(1) : 0,
-      meetingToDocuments: meetingDone > 0 ? ((documentationInitiated / meetingDone) * 100).toFixed(1) : 0,
-      documentsToBankerAcceptance: documentationInitiated > 0 ? ((bankerAccepted / documentationInitiated) * 100).toFixed(1) : 0,
-      bankerAcceptanceToSanction: bankerAccepted > 0 ? ((sanctioned / bankerAccepted) * 100).toFixed(1) : 0,
-      sanctionToDisbursement: sanctioned > 0 ? ((disbursed / sanctioned) * 100).toFixed(1) : 0
-    };
-
-    const ratioCounts = {
-      leadsToMeeting: { num: meetingDone, den: totalLeads },
-      meetingToDocuments: { num: documentationInitiated, den: meetingDone },
-      documentsToBankerAcceptance: { num: bankerAccepted, den: documentationInitiated },
-      bankerAcceptanceToSanction: { num: sanctioned, den: bankerAccepted },
-      sanctionToDisbursement: { num: disbursed, den: sanctioned }
-    };
-
-    setStats({
-      today: todayCount,
-      last7Days: last7DaysCount,
-      last30Days: last30DaysCount,
-      thisFinancialYear: financialYearCount,
-      statusCounts,
-      ratios,
-      ratioCounts
-    });
   };
 
   const StatCard = ({ title, count, icon, gradient }) => (
@@ -661,38 +455,51 @@ const UsersDashboard = () => {
         </div>
       </div>
 
-      {/* Time Period Stats */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: "25px",
-        marginBottom: "50px"
-      }}>
-        <StatCard
-          title="Today"
-          count={stats.today}
-          icon={<FaCalendarDay />}
-          gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-        />
-        <StatCard
-          title="Last 7 Days"
-          count={stats.last7Days}
-          icon={<FaCalendarWeek />}
-          gradient="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
-        />
-        <StatCard
-          title="Last 30 Days"
-          count={stats.last30Days}
-          icon={<FaCalendarAlt />}
-          gradient="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
-        />
-        <StatCard
-          title="This Financial Year"
-          count={stats.thisFinancialYear}
-          icon={<FaChartLine />}
-          gradient="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
-        />
-      </div>
+      {loading ? (
+        <div style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "300px",
+          color: "white",
+          fontSize: "1.2em"
+        }}>
+          Loading dashboard statistics...
+        </div>
+      ) : (
+        <>
+        {/* Time Period Stats */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: "25px",
+          marginBottom: "50px"
+        }}>
+          <StatCard
+            title="Today"
+            count={stats.today}
+            icon={<FaCalendarDay />}
+            gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+          />
+          <StatCard
+            title="Last 7 Days"
+            count={stats.last7Days}
+            icon={<FaCalendarWeek />}
+            gradient="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
+          />
+          <StatCard
+            title="Last 30 Days"
+            count={stats.last30Days}
+            icon={<FaCalendarAlt />}
+            gradient="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
+          />
+          <StatCard
+            title="This Financial Year"
+            count={stats.thisFinancialYear}
+            icon={<FaChartLine />}
+            gradient="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
+          />
+        </div>
 
       {/* Conversion Ratios */}
       <div style={{
@@ -795,6 +602,8 @@ const UsersDashboard = () => {
           ))}
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };
