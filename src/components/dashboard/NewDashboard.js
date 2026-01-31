@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FaCalendarDay, FaCalendarWeek, FaCalendarAlt, FaChartLine, FaUsers, FaHandshake, FaFileAlt, FaCheck, FaMoneyBillWave } from 'react-icons/fa';
 import apiFetch from "../../utils/api";
-import dayjs from 'dayjs';
 
 const NewDashboard = () => {
-  const [cases, setCases] = useState([]);
   const [stats, setStats] = useState({
     today: 0,
     last7Days: 0,
@@ -17,126 +15,23 @@ const NewDashboard = () => {
       documentsToBankerAcceptance: 0,
       bankerAcceptanceToSanction: 0,
       sanctionToDisbursement: 0
-    }
+    },
+    ratioCounts: {}
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiFetch("/cases", {
+    setLoading(true);
+    apiFetch("/cases/dashboard-stats", {
       method: "GET",
       credentials: "include",
     })
       .then((res) => {
-        const casesData = res.cases || res;
-        setCases(casesData);
-        calculateStats(casesData);
+        setStats(res);
       })
-      .catch((err) => console.error(err));
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
   }, []);
-
-  const calculateStats = (casesData) => {
-    const now = dayjs();
-    const today = now.startOf('day');
-    const last7Days = now.subtract(7, 'day').startOf('day');
-    const last30Days = now.subtract(30, 'day').startOf('day');
-
-    // Financial year starts April 1st
-    const currentYear = now.year();
-    const financialYearStart = now.month() >= 3
-      ? dayjs(`${currentYear}-04-01`)
-      : dayjs(`${currentYear - 1}-04-01`);
-
-    let todayCount = 0;
-    let last7DaysCount = 0;
-    let last30DaysCount = 0;
-    let financialYearCount = 0;
-    const statusCounts = {};
-
-    // Ratio calculations
-    let totalLeads = 0;
-    let meetingDone = 0;
-    let documentationInitiated = 0;
-    let bankerAccepted = 0;
-    let sanctioned = 0;
-    let disbursed = 0;
-
-    casesData.forEach(case_ => {
-      const caseDate = dayjs(case_.createddate || case_.date);
-
-      // Count by time periods
-      if (caseDate.isAfter(today)) todayCount++;
-      if (caseDate.isAfter(last7Days)) last7DaysCount++;
-      if (caseDate.isAfter(last30Days)) last30DaysCount++;
-      if (caseDate.isAfter(financialYearStart)) financialYearCount++;
-
-      // Count by status
-      const status = case_.status || 'Unknown';
-      statusCounts[status] = (statusCounts[status] || 0) + 1;
-
-      // Calculate ratios based on status and bank assignments
-      totalLeads++;
-
-      if (['Meeting Done', 'Documentation Initiated', 'Documentation In Progress',
-        'Underwriting', 'Banker Review', 'Completed'].includes(status)) {
-        meetingDone++;
-      }
-
-      if (['Documentation Initiated', 'Documentation In Progress',
-        'Underwriting', 'Banker Review', 'Completed'].includes(status)) {
-        documentationInitiated++;
-      }
-
-      // Check bank assignments for banker acceptance - Updated logic
-      if (case_.bank_assignments && Array.isArray(case_.bank_assignments)) {
-        const hasAcceptedBanker = case_.bank_assignments.some(ba =>
-          ba.status && ['ACCEPT', 'ACCEPTED', 'IN-PROGRESS', 'IN_PROGRESS', 'APPROVED', 'SANCTIONED', 'DISBURSED'].includes(ba.status.toUpperCase())
-        );
-        if (hasAcceptedBanker) {
-          bankerAccepted++;
-        }
-
-        const hasSanctioned = case_.bank_assignments.some(ba =>
-          ba.status && ['SANCTIONED', 'DISBURSED'].includes(ba.status.toUpperCase())
-        );
-        if (hasSanctioned) {
-          sanctioned++;
-        }
-
-        const hasDisbursed = case_.bank_assignments.some(ba =>
-          ba.status && ba.status.toUpperCase() === 'DISBURSED'
-        );
-        if (hasDisbursed) {
-          disbursed++;
-        }
-      }
-    });
-
-    // Calculate percentages and ratios
-    const ratios = {
-      leadsToMeeting: totalLeads > 0 ? ((meetingDone / totalLeads) * 100).toFixed(1) : 0,
-      meetingToDocuments: meetingDone > 0 ? ((documentationInitiated / meetingDone) * 100).toFixed(1) : 0,
-      documentsToBankerAcceptance: documentationInitiated > 0 ? ((bankerAccepted / documentationInitiated) * 100).toFixed(1) : 0,
-      bankerAcceptanceToSanction: bankerAccepted > 0 ? ((sanctioned / bankerAccepted) * 100).toFixed(1) : 0,
-      sanctionToDisbursement: sanctioned > 0 ? ((disbursed / sanctioned) * 100).toFixed(1) : 0
-    };
-
-    const ratioCounts = {
-      leadsToMeeting: { num: meetingDone, den: totalLeads },
-      meetingToDocuments: { num: documentationInitiated, den: meetingDone },
-      documentsToBankerAcceptance: { num: bankerAccepted, den: documentationInitiated },
-      bankerAcceptanceToSanction: { num: sanctioned, den: bankerAccepted },
-      sanctionToDisbursement: { num: disbursed, den: sanctioned }
-    };
-
-    setStats({
-      today: todayCount,
-      last7Days: last7DaysCount,
-      last30Days: last30DaysCount,
-      thisFinancialYear: financialYearCount,
-      statusCounts,
-      ratios,
-      ratioCounts
-    });
-  };
 
   const StatCard = ({ title, count, icon, gradient }) => (
     <div style={{
@@ -287,22 +182,35 @@ const NewDashboard = () => {
         Dashboard Overview
       </h2>
 
-      {/* Time Period Stats */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: "25px",
-        marginBottom: "50px"
-      }}>
-        <StatCard
-          title="Today"
-          count={stats.today}
-          icon={<FaCalendarDay />}
-          gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-        />
-        <StatCard
-          title="Last 7 Days"
-          count={stats.last7Days}
+      {loading ? (
+        <div style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "300px",
+          color: "white",
+          fontSize: "1.2em"
+        }}>
+          Loading dashboard statistics...
+        </div>
+      ) : (
+        <>
+        {/* Time Period Stats */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: "25px",
+          marginBottom: "50px"
+        }}>
+          <StatCard
+            title="Today"
+            count={stats.today}
+            icon={<FaCalendarDay />}
+            gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+          />
+          <StatCard
+            title="Last 7 Days"
+            count={stats.last7Days}
           icon={<FaCalendarWeek />}
           gradient="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
         />
@@ -393,7 +301,7 @@ const NewDashboard = () => {
       </div>
 
       {/* Status Wise Breakdown */}
-      <div style={{
+      {/* <div style={{
         background: "rgba(255, 255, 255, 0.95)",
         backdropFilter: "blur(10px)",
         border: "1px solid rgba(255, 255, 255, 0.2)",
@@ -419,7 +327,9 @@ const NewDashboard = () => {
             <StatusCard key={status} status={status} count={count} />
           ))}
         </div>
-      </div>
+      </div> */}
+        </>
+      )}
     </div>
   );
 };
