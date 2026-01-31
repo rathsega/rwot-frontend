@@ -82,7 +82,7 @@ const [filteredLeads, setFilteredLeads] = useState(cases);
       await apiFetch(`/cases/${caseData.caseid}/status`, {
         method: "PATCH",
         token,
-        body: JSON.stringify({ status: "Underwriting" })
+        body: JSON.stringify({ status: "Sanctioned" })
       });
       handleRefresh?.();
     } catch (err) {
@@ -96,7 +96,7 @@ const [filteredLeads, setFilteredLeads] = useState(cases);
     'edit',
     {
       icon: FaArrowRight,
-      tooltip: 'Move to Underwriting',
+      tooltip: 'Move to Sanctioned',
       color: '#10b981',
       onClick: handleMoveToNextStage
     }
