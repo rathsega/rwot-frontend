@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { 
     FaArrowLeft, FaBuilding, FaUser, FaPhone, FaEnvelope, FaMapMarkerAlt, 
     FaMoneyBillWave, FaCalendarAlt, FaClock, FaFileAlt, FaComments, 
@@ -89,12 +89,13 @@ function isFieldReadonly(fieldName, canEdit, caseData) {
 const CaseDetailsPage = () => {
     const { caseid } = useParams();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { token, user } = useAuth() || {};
     
     const [caseData, setCaseData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [isEditing, setIsEditing] = useState(false);
+    const [isEditing, setIsEditing] = useState(searchParams.get('edit') === 'true');
     const [editForm, setEditForm] = useState({});
     const [newComment, setNewComment] = useState("");
     const [productModal, setProductModal] = useState(false);

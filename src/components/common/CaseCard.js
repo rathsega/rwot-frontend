@@ -76,6 +76,8 @@ const CaseCard = ({
                 e.stopPropagation();
                 if (action === 'view') {
                     navigate(`/dashboard/case/${caseData.caseid}`);
+                } else if (action === 'edit') {
+                    navigate(`/dashboard/case/${caseData.caseid}?edit=true`);
                 }
             };
         } else {
