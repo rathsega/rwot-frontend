@@ -130,7 +130,7 @@ const CaseCard = ({
 
             {/* Client Name - Main Focus */}
             <h3 className="client-name">
-                {caseData.clientname || caseData.companyname || 'Unknown Client'}
+                {caseData.companyname || caseData.clientname || 'Unknown Client'}
             </h3>
 
             {/* KAM Badge */}
