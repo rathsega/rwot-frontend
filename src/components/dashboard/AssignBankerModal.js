@@ -43,6 +43,31 @@ function AssignBankerModal({ show, closeBankerModal, onClose, banks, assignedBan
         }
     }, [show, assignedBankers, docConfig, banks]);
 
+    // Save bank assignments to API
+    const handleSave = async () => {
+        try {
+            // Build the configs array for the API
+            const configs = assignedBankers.map(bankerId => ({
+                bankerId: bankerId,
+                documents: docConfig[bankerId] || {}
+            }));
+            
+            console.log("Saving bank assignments:", { caseid, configs });
+            
+            await apiFetch(`/cases/${caseid}/document-config`, {
+                method: "POST",
+                token,
+                body: JSON.stringify(configs)
+            });
+            
+            console.log("Bank assignments saved successfully");
+            onClose(); // Close and refresh
+        } catch (err) {
+            console.error("Failed to save bank assignments:", err);
+            alert("Failed to save bank assignments. Please try again.");
+        }
+    };
+
     const filterBanks = (e) => {
         const query = e.target.value.toLowerCase();
         const filtered = banks.filter(bank =>
@@ -161,8 +186,8 @@ function AssignBankerModal({ show, closeBankerModal, onClose, banks, assignedBan
                 })}
                 <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
                     {/* Need cancel button */}
-                    <button onClick={closeBankerModal} style={{ padding: "8px 16px", borderRadius: 6, border: "1.5px solid #d1d5db", background: "gray", fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-                    <button onClick={onClose} style={{ padding: "8px 16px", borderRadius: 6, border: "none", background: "#7840efff", fontWeight: 600, cursor: "pointer" }}>Save</button>
+                    <button onClick={closeBankerModal} style={{ padding: "8px 16px", borderRadius: 6, border: "1.5px solid #d1d5db", background: "gray", fontWeight: 600, cursor: "pointer", color: "white" }}>Cancel</button>
+                    <button onClick={handleSave} style={{ padding: "8px 16px", borderRadius: 6, border: "none", background: "#7840efff", fontWeight: 600, cursor: "pointer", color: "white" }}>Save</button>
                 </div>
             </div>
         </div>
