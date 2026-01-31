@@ -180,7 +180,10 @@ const CaseDetailsPage = () => {
     const handleOpenAssignBanker = () => {
         // Pre-populate assigned bankers from existing bank_assignments
         const existingBankAssignments = caseData?.bank_assignments || [];
+        console.log("Opening bank modal with bank_assignments:", existingBankAssignments);
+        
         const existingBankerIds = existingBankAssignments.map(ba => String(ba.bankid));
+        console.log("Setting assignedBankers to:", existingBankerIds);
         setAssignedBankers(existingBankerIds);
         
         // Pre-populate document config from existing bank_assignments
@@ -190,6 +193,7 @@ const CaseDetailsPage = () => {
                 existingDocConfig[String(ba.bankid)] = ba.document_config;
             }
         });
+        console.log("Setting docConfig to:", existingDocConfig);
         setDocConfig(existingDocConfig);
         
         setShowAssignBankerModal(true);

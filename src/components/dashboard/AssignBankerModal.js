@@ -36,6 +36,13 @@ function AssignBankerModal({ show, closeBankerModal, onClose, banks, assignedBan
         setFilteredBanks(banks);
     }, [banks]);
 
+    // Debug: Log the assignedBankers and docConfig when modal opens
+    useEffect(() => {
+        if (show) {
+            console.log("AssignBankerModal opened with:", { assignedBankers, docConfig, banks });
+        }
+    }, [show, assignedBankers, docConfig, banks]);
+
     const filterBanks = (e) => {
         const query = e.target.value.toLowerCase();
         const filtered = banks.filter(bank =>
