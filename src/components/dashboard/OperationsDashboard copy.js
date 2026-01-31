@@ -67,7 +67,8 @@ export default function OperationsDashboard() {
       toast.success("Document uploaded successfully");
 
       // Refresh updated case only
-      const updatedCase = await apiFetch(`/cases/${caseid}`, { credentials: "include" });
+      const updatedCaseRes = await apiFetch(`/cases/${caseid}`, { credentials: "include" });
+      const updatedCase = updatedCaseRes?.case || updatedCaseRes;
 
       // Replace that case inside global list
       setCases(prev =>

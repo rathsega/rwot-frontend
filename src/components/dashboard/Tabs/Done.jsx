@@ -1,75 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import CaseCard from "../../common/CaseCard";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./../../../context/AuthContext";
 import apiFetch from "./../../../utils/api";
 import { exportLeadsToExcel } from "../../../services/leadExportService";
 import { FaCheck } from "react-icons/fa";
+import ServerSearchBar from "../../common/ServerSearchBar";
 
-function Done({ cases, handleRefresh }) {
+function Done({ cases, handleRefresh, searchTerm = "", onSearchChange }) {
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
   const { token } = useAuth() || {};
-
- const [filteredLeads, setFilteredLeads] = useState(cases);
-   // ✅ Recursive function to flatten nested objects and arrays
-   const flattenObject = (obj, prefix = '') => {
-     let result = [];
- 
-     for (let key in obj) {
-       if (obj.hasOwnProperty(key)) {
-         const value = obj[key];
- 
-         // Skip null or undefined
-         if (value === null || value === undefined) {
-           continue;
-         }
- 
-         // If it's an array, flatten each item
-         if (Array.isArray(value)) {
-           value.forEach((item, index) => {
-             if (typeof item === 'object' && item !== null) {
-               result = result.concat(flattenObject(item, `${prefix}${key}[${index}].`));
-             } else {
-               result.push(String(item));
-             }
-           });
-         }
-         // If it's an object, recurse
-         else if (typeof value === 'object') {
-           result = result.concat(flattenObject(value, `${prefix}${key}.`));
-         }
-         // Otherwise, add the value
-         else {
-           result.push(String(value));
-         }
-       }
-     }
- 
-     return result;
-   };
- 
-   useEffect(() => {
-     // Filter leads by search string (case-insensitive, match anywhere in any value including nested objects)
-     const fl = cases?.filter(lead => {
-       if (search.trim() === "") return true;
- 
-       // ✅ Flatten the lead object to get all nested values
-       const allValues = flattenObject(lead);
- 
-       // Log for debugging
-       console.log("Flattened values:", allValues);
- 
-       // Join all values and search
-       const searchableText = allValues.join(" ").toLowerCase();
-       const searchTerm = search.trim().toLowerCase();
- 
-       return searchableText.includes(searchTerm);
-     });
- 
-     console.log("Filtered leads:", fl);
-     setFilteredLeads(fl);
-   }, [search, cases]);
 
   // Export to Excel
   const handleExport = () => {
@@ -84,22 +24,20 @@ function Done({ cases, handleRefresh }) {
   return (
     <>
       <div className="search-export-bar">
-        <input
-          type="text"
+        <ServerSearchBar 
+          searchTerm={searchTerm} 
+          onSearchChange={onSearchChange} 
           placeholder="Search cases..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="search-input"
         />
         <div className="case-count">
-          Showing {filteredLeads?.length || 0} of {cases?.length || 0} cases
+          Showing {cases?.length || 0} cases
         </div>
         <button onClick={handleExport} className="export-btn">
           Export to Excel
         </button>
       </div>
       <div className="case-cards-grid">
-        {filteredLeads.length === 0 ?
+        {cases.length === 0 ?
           <div
             style={{
               padding: "48px 0",
@@ -117,7 +55,7 @@ function Done({ cases, handleRefresh }) {
             <span role="img" aria-label="no data" style={{ fontSize: 38, display: "block", marginBottom: 12 }}>📄</span>
             No records found in Done.
           </div>
-          : filteredLeads.map((lead, index) => (
+          : cases.map((lead, index) => (
             <CaseCard
               key={lead.caseid || lead.id}
               caseData={lead}

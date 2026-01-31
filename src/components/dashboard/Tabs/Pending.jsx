@@ -1,24 +1,15 @@
-import React, { useState } from "react";
+import React from "react";
 import CaseCard from "../../common/CaseCard";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./../../../context/AuthContext";
 import apiFetch from "./../../../utils/api";
 import { exportLeadsToExcel } from "../../../services/leadExportService";
 import { FaCheck, FaBan } from "react-icons/fa";
+import ServerSearchBar from "../../common/ServerSearchBar";
 
-function Pending({ cases, handleRefresh }) {
+function Pending({ cases, handleRefresh, searchTerm = "", onSearchChange }) {
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
   const { token } = useAuth() || {};
-
-  // Filter leads by search string (case-insensitive, match anywhere in any value)
-  const filteredLeads = cases?.filter(lead =>
-    search.trim() === "" ||
-    Object.values(lead)
-      .join(" ")
-      .toLowerCase()
-      .includes(search.trim().toLowerCase())
-  );
 
   // Export to Excel
   const handleExport = () => {
@@ -73,22 +64,20 @@ function Pending({ cases, handleRefresh }) {
   return (
     <>
       <div className="search-export-bar">
-        <input
-          type="text"
+        <ServerSearchBar 
+          searchTerm={searchTerm} 
+          onSearchChange={onSearchChange} 
           placeholder="Search cases..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="search-input"
         />
         <div className="case-count">
-          Showing {filteredLeads?.length || 0} of {cases?.length || 0} cases
+          Showing {cases?.length || 0} cases
         </div>
         <button onClick={handleExport} className="export-btn">
           Export to Excel
         </button>
       </div>
       <div className="case-cards-grid">
-        {filteredLeads.length === 0 ?
+        {cases.length === 0 ?
           <div
             style={{
               padding: "48px 0",
@@ -106,7 +95,7 @@ function Pending({ cases, handleRefresh }) {
             <span role="img" aria-label="no data" style={{ fontSize: 38, display: "block", marginBottom: 12 }}>📄</span>
             No records found.
           </div>
-          : filteredLeads.map((lead, index) => (
+          : cases.map((lead, index) => (
             <CaseCard
               key={lead.caseid || lead.id}
               caseData={lead}

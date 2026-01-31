@@ -50,7 +50,7 @@ const STATUS_OPTIONS = [
 ];
 
 const ONE_PAGER_DOCS = [
-    "One Pager"
+    "OnePager"
 ];
 
 // --- Permission and Readonly Logic ---
@@ -765,9 +765,10 @@ const CaseDetailsPage = () => {
                                 <div className="docs-mini-list">
                                     {ONE_PAGER_DOCS.map(doc => {
                                         const uploaded = getUploadedDoc(doc, "onePager");
+                                        const displayName = doc === "OnePager" ? "One Pager" : doc;
                                         return (
                                             <div key={doc} className={`docs-mini-item ${uploaded ? 'uploaded' : ''}`}>
-                                                <span className="mini-doc-name" title={doc}>{doc.length > 25 ? doc.slice(0, 25) + '...' : doc}</span>
+                                                <span className="mini-doc-name" title={displayName}>{displayName.length > 25 ? displayName.slice(0, 25) + '...' : displayName}</span>
                                                 {uploaded ? (
                                                     canDownloadDoc("onePager") && (
                                                         <a href={`${baseUrl}/documents/downloadNew/${uploaded.filename}`} target="_blank" rel="noreferrer" className="mini-download">

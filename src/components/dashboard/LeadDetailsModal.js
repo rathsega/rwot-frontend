@@ -410,7 +410,8 @@ const LeadDetailsModal = ({ lead, onClose, handleRefresh }) => {
         autoClose: 3000
       });
 
-      const updatedCase = await apiFetch(`/cases/${caseid}`, { credentials: "include" });
+      const updatedCaseRes = await apiFetch(`/cases/${caseid}`, { credentials: "include" });
+      const updatedCase = updatedCaseRes?.case || updatedCaseRes;
       leadData.documents = updatedCase.documents || [];
       setLeadData({ ...leadData, documents: updatedCase.documents || [] });
 
@@ -522,7 +523,8 @@ const LeadDetailsModal = ({ lead, onClose, handleRefresh }) => {
 
       toast.success("Document deleted");
 
-      const updatedCase = await apiFetch(`/cases/${caseid}`, { credentials: "include" });
+      const updatedCaseRes = await apiFetch(`/cases/${caseid}`, { credentials: "include" });
+      const updatedCase = updatedCaseRes?.case || updatedCaseRes;
       leadData.documents = updatedCase.documents || [];
       setLeadData({ ...leadData, documents: updatedCase.documents || [] });
 

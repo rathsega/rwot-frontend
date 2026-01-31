@@ -6,7 +6,7 @@ import apiFetch from "./../../../utils/api";
 import { exportLeadsToExcel } from "../../../services/leadExportService";
 import { FaEdit, FaPlay, FaFileAlt } from "react-icons/fa";
 
-function DocumentationInitiated({ cases, handleRefresh }) {
+function DocumentationInitiated({ cases, handleRefresh, hideSearch = false }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const { token } = useAuth() || {};
@@ -106,13 +106,15 @@ function DocumentationInitiated({ cases, handleRefresh }) {
   return (
     <>
       <div className="search-export-bar">
-        <input
-          type="text"
-          placeholder="Search cases..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="search-input"
-        />
+        {!hideSearch && (
+          <input
+            type="text"
+            placeholder="Search cases..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="search-input"
+          />
+        )}
         <div className="case-count">
           Showing {filteredLeads?.length || 0} of {cases?.length || 0} cases
         </div>

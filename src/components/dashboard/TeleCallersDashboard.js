@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { FaUserEdit, FaPlus, FaTimes, FaRegCommentDots } from "react-icons/fa";
+import React, { useEffect, useState, useMemo } from "react";
+import { FaUserEdit, FaPlus, FaTimes, FaRegCommentDots, FaSpinner } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import apiFetch from "../../utils/api";
 import { ToastContainer, toast } from "react-toastify";
@@ -7,6 +7,8 @@ import "react-toastify/dist/ReactToastify.css";
 import { FaSearch } from "react-icons/fa";
 import dayjs from "dayjs";
 import { useColdCaseThreshold } from "../../hooks/useSettings";
+
+const ITEMS_PER_PAGE = 20;
 
 export default function TelecallersDashboard() {
   const { token } = useAuth() || {};
@@ -20,6 +22,8 @@ export default function TelecallersDashboard() {
   const [commentText, setCommentText] = useState("");
   const [originalCases, setOriginalCases] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
 
   // ✅ Separate state for each filter
   const [filters, setFilters] = useState({
@@ -72,12 +76,13 @@ export default function TelecallersDashboard() {
     fetchKamUsers();
   }, []);
 
-  // ✅ Apply all filters whenever filters state changes
+  // ✅ Reset display count when filters change
   useEffect(() => {
-    applyAllFilters();
+    setDisplayCount(ITEMS_PER_PAGE);
   }, [filters, originalCases]);
 
-  const applyAllFilters = () => {
+  // ✅ Use memoized filtered results for performance
+  const filteredCases = useMemo(() => {
     let filtered = [...originalCases];
 
     // Apply search filter
@@ -106,7 +111,7 @@ export default function TelecallersDashboard() {
     if(filters?.status === "Cold"){
       filtered = filtered.filter((c) =>
         c.status_updated_on &&
-                dayjs().diff(dayjs(c.status_updated_on), "hour") > coldCaseThresholdHours
+        dayjs().diff(dayjs(c.status_updated_on), "hour") > coldCaseThresholdHours
       );  
     }
 
@@ -178,8 +183,24 @@ export default function TelecallersDashboard() {
       );
     }
 
-    setCases(filtered);
+    return filtered;
+  }, [filters, originalCases, coldCaseThresholdHours]);
+
+  // ✅ Display only a slice for pagination
+  const displayedCases = useMemo(() => {
+    return filteredCases.slice(0, displayCount);
+  }, [filteredCases, displayCount]);
+
+  const hasMoreCases = displayCount < filteredCases.length;
+
+  const handleLoadMore = () => {
+    setDisplayCount(prev => prev + ITEMS_PER_PAGE);
   };
+
+  // Keep cases in sync for modals that reference cases state
+  useEffect(() => {
+    setCases(displayedCases);
+  }, [displayedCases]);
 
   const handleSearch = (searchValue) => {
     setSearchTerm(searchValue);
@@ -198,7 +219,7 @@ export default function TelecallersDashboard() {
       search: ""
     });
     setSearchTerm("");
-    setCases(originalCases);
+    setDisplayCount(ITEMS_PER_PAGE);
 
     // Reset select elements
     const selects = document.querySelectorAll(".filter-select");
@@ -487,8 +508,9 @@ export default function TelecallersDashboard() {
           </button>
         </div>
       </div>
-      <div style={{ marginBottom: "12px", fontWeight: 500, color: "#555" }}>
-        Showing {cases.length} of {originalCases.length} cases
+      <div style={{ marginBottom: "12px", fontWeight: 500, color: "#555", display: "flex", alignItems: "center", gap: "10px" }}>
+        <span>Showing {displayedCases.length} of {filteredCases.length} filtered cases ({originalCases.length} total)</span>
+        {loading && <FaSpinner style={{ animation: "spin 1s linear infinite" }} />}
       </div>
 
       {/* Table */}
@@ -517,7 +539,7 @@ export default function TelecallersDashboard() {
             </tr>
           </thead>
           <tbody>
-            {cases?.map((c, i) => (
+            {displayedCases?.map((c, i) => (
               <tr key={i} style={{ borderBottom: "1px solid #eee", fontWeight: 500 }}>
                 <td style={{ textAlign: "left", padding: 14 }}>
                   <button onClick={() => handleModalOpen(c)} style={{ border: "none", background: "none", color: "#2979ff", cursor: "pointer" }}>
@@ -557,6 +579,27 @@ export default function TelecallersDashboard() {
           </tbody>
         </table>
       </div>
+
+      {/* Load More Button */}
+      {hasMoreCases && (
+        <div style={{ textAlign: "center", marginTop: "20px" }}>
+          <button
+            onClick={handleLoadMore}
+            style={{
+              background: "#2563eb",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              padding: "12px 32px",
+              cursor: "pointer",
+              fontWeight: "600",
+              fontSize: "14px"
+            }}
+          >
+            Load More ({filteredCases.length - displayCount} remaining)
+          </button>
+        </div>
+      )}
 
       {/* Modal code remains the same... */}
       {modal.open && (
@@ -833,6 +876,13 @@ export default function TelecallersDashboard() {
       )}
 
       <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick />
+      
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

@@ -295,7 +295,7 @@ export default function UnderwritingDashboard() {
       const updated = await apiFetch(`/cases/${caseId}`, {
         credentials: "include"
       });
-      setSelectedCase(updated);
+      setSelectedCase(updated?.case || updated);
       setUploads((prev) => ({ ...prev, [uploadKey]: null }));
 
       // Reset provisional form if it was a provisional upload
@@ -335,7 +335,7 @@ export default function UnderwritingDashboard() {
 
       // Refresh current case
       const updated = await apiFetch(`/cases/${caseId}`, { credentials: "include" });
-      setSelectedCase(updated);
+      setSelectedCase(updated?.case || updated);
     } catch {
       toast.error("Error deleting document");
     }

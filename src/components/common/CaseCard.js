@@ -29,13 +29,15 @@ const CaseCard = ({
     onCardClick,
     showKam = false,
     colorIndex = 0,
+    showStaleIndicator = false,
     coldCaseThresholdHours = 48
 }) => {
     const navigate = useNavigate();
     const colors = cardColors[colorIndex % cardColors.length];
 
-    // Check if case is stale (no update for configured threshold hours and not Open)
-    const isStale = caseData.status !== "Open" && 
+    // Check if case is stale (no update for configured threshold hours)
+    // Only computed when showStaleIndicator is true (Cold tab)
+    const isStale = showStaleIndicator && 
         caseData.status_updated_on &&
         dayjs().diff(dayjs(caseData.status_updated_on), "hour") > coldCaseThresholdHours;
 
