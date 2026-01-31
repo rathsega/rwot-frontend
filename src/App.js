@@ -37,6 +37,7 @@ import BankerRegister from "./components/Register/BankerRegister";
 import InternalRegister from "./components/Register/InternalRegister";
 import UsersDashboard from "./components/dashboard/UsersDashboard";
 import CaseDetailsPage from "./components/pages/CaseDetailsPage";
+import CasesListPage from "./components/pages/CasesListPage";
 import AdminSettings from "./components/dashboard/AdminSettings";
 
 function ProtectedRoute({ element: Element, allowedRoles }) {
@@ -119,6 +120,7 @@ function AppContent() {
             <Route path="users-dashboard" element={<ProtectedRoute element={UsersDashboard} allowedRoles={["Admin"]} />} />
             <Route path="settings" element={<ProtectedRoute element={AdminSettings} allowedRoles={["Admin"]} />} />
             <Route path="case/:caseid" element={<ProtectedRoute element={CaseDetailsPage} allowedRoles={["Admin", "UW", "Operations", "Telecaller", "KAM", "Banker", "Individual"]} />} />
+            <Route path="cases" element={<ProtectedRoute element={CasesListPage} allowedRoles={["Admin", "UW", "Operations", "Telecaller", "KAM", "Banker", "Individual"]} />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
 

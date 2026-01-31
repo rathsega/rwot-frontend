@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaCalendarDay, FaCalendarWeek, FaCalendarAlt, FaChartLine, FaUsers, FaHandshake, FaFileAlt, FaCheck, FaMoneyBillWave } from 'react-icons/fa';
 import apiFetch from "../../utils/api";
 import dayjs from 'dayjs';
@@ -9,6 +10,7 @@ dayjs.extend(isBetween);
 dayjs.extend(isoWeek);
 
 const UsersDashboard = () => {
+  const navigate = useNavigate();
   const [cases, setCases] = useState([]);
   const [allCases, setAllCases] = useState([]);
   const [stats, setStats] = useState({
@@ -368,7 +370,7 @@ const UsersDashboard = () => {
     </div>
   );
 
-  const StatusCard = ({ status, count }) => {
+  const StatusCard = ({ status, count, onClick }) => {
     const getStatusColor = (status) => {
       const colors = {
         'Open': '#e3f2fd',
@@ -412,6 +414,7 @@ const UsersDashboard = () => {
         transition: "all 0.2s",
         cursor: "pointer"
       }}
+        onClick={onClick}
         onMouseOver={(e) => {
           e.currentTarget.style.transform = "translateX(5px)";
           e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
@@ -783,7 +786,12 @@ const UsersDashboard = () => {
           gap: "15px"
         }}>
           {Object.entries(stats.statusCounts).map(([status, count]) => (
-            <StatusCard key={status} status={status} count={count} />
+            <StatusCard 
+              key={status} 
+              status={status} 
+              count={count} 
+              onClick={() => navigate(`/dashboard/cases?status=${encodeURIComponent(status)}`)} 
+            />
           ))}
         </div>
       </div>
