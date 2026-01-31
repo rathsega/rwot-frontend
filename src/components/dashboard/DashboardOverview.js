@@ -5,10 +5,20 @@ import apiFetch from "../../utils/api";
 import dayjs from "dayjs";
 import isBetween from 'dayjs/plugin/isBetween';
 import isoWeek from 'dayjs/plugin/isoWeek';
+import advancedFormat from 'dayjs/plugin/advancedFormat';
 import { useColdCaseThreshold } from "../../hooks/useSettings";
 
 dayjs.extend(isBetween);
 dayjs.extend(isoWeek);
+dayjs.extend(advancedFormat);
+
+// Helper to format date as "31st Jan, 2026"
+const formatDateWithOrdinal = (dateStr) => {
+  if (!dateStr) return "--";
+  const d = dayjs(dateStr);
+  if (!d.isValid()) return "--";
+  return d.format("Do MMM, YYYY");
+};
 
 const DashboardOverview = () => {
   const { coldCaseThresholdHours } = useColdCaseThreshold();
@@ -522,7 +532,7 @@ const DashboardOverview = () => {
                 );
                 return telecallerAssignment ? telecallerAssignment.assigned_to_name : "--";
               })()}</td>
-              <td>{c?.meeting_done_date || "--"}</td>
+              <td>{formatDateWithOrdinal(c?.meeting_done_date)}</td>
               <td>{c.status || "--"}</td>
               <td>{c?.bank_assignments?.map(element => (
                 <p key={element.id}>{element.bank_name} - {element.status}</p>
