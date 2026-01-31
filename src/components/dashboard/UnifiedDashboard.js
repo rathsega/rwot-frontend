@@ -50,7 +50,7 @@ export default function UnifiedDashboard() {
         if (user?.rolename === "Telecaller") {
             return [
                 { key: "open", label: "Open", statuses: ["Open"] },
-                { key: "closed", label: "Closed", statuses: ["No Requirement", "Disbursed", "Closed"] },
+                { key: "closed", label: "Closed", statuses: ["No Requirement", "Disbursement", "Done"] },
             ];
         }
 

@@ -64,7 +64,7 @@ function AssignBankerModal({ show, closeBankerModal, onClose, banks, assignedBan
 
     const getBankName = (bankerId) => {
         //console.log(banks, bankerId);
-        const bank = banks.find(b => b.id == bankerId);
+        const bank = banks.find(b => String(b.id) === String(bankerId));
         return bank ? bank.name : bankerId;
     }
     if (!show) return null;
@@ -95,7 +95,7 @@ function AssignBankerModal({ show, closeBankerModal, onClose, banks, assignedBan
                         }}
                     >
                         {filteredBanks?.map((bank, idx) => (
-                            <option key={bank.id || idx} value={bank.id}>
+                            <option key={bank.id || idx} value={String(bank.id)}>
                                 {bank.name} - {bank.email}
                             </option>
                         ))}

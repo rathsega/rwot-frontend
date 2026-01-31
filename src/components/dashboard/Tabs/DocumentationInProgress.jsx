@@ -75,17 +75,18 @@ function DocumentationInProgress({ cases, handleRefresh }) {
     exportLeadsToExcel(cases, "documentation_in_progress_leads.xlsx");
   };
 
-  // Complete documentation action
+  // Complete documentation action - moves to Underwriting
   const handleComplete = async (caseData) => {
     try {
       await apiFetch(`/cases/${caseData.caseid}/status`, {
         method: "PATCH",
         token,
-        body: JSON.stringify({ status: "Done" })
+
+        body: JSON.stringify({ status: "Underwriting" })
       });
       handleRefresh?.();
     } catch (err) {
-      console.error("Failed to complete documentation:", err);
+      console.error("Failed to move to underwriting:", err);
     }
   };
 
@@ -95,7 +96,7 @@ function DocumentationInProgress({ cases, handleRefresh }) {
     'edit',
     {
       icon: FaCheckCircle,
-      tooltip: 'Complete Documentation',
+      tooltip: 'Move to Underwriting',
       color: '#10b981',
       onClick: handleComplete
     }

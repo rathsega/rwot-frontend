@@ -378,7 +378,8 @@ const DashboardOverview = () => {
               <option value="Underwriting">Underwriting</option>
               <option value="One Pager">One Pager</option>
               <option value="Banker Review">Banker Review</option>
-              <option value="Completed">Completed</option>
+              <option value="Disbursement">Disbursement</option>
+              <option value="Done">Done</option>
               <option value="No Requirement">No Requirement</option>
               <option value="Cold">Cold</option>
             </select>

@@ -4,7 +4,7 @@ import {
     FaArrowLeft, FaBuilding, FaUser, FaPhone, FaEnvelope, FaMapMarkerAlt, 
     FaMoneyBillWave, FaCalendarAlt, FaClock, FaFileAlt, FaComments, 
     FaCloudDownloadAlt, FaCloudUploadAlt, FaTrashAlt, FaEdit, FaSave,
-    FaExchangeAlt, FaHandshake, FaBan, FaTimes, FaPlus
+    FaExchangeAlt, FaHandshake, FaBan, FaTimes, FaPlus, FaUniversity
 } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
 import apiFetch from "../../utils/api";
@@ -12,6 +12,7 @@ import { useAuth } from "../../context/AuthContext";
 import dayjs from "dayjs";
 import "./CaseDetailsPage.css";
 import { FaLock } from "react-icons/fa";
+import AssignBankerModal from "../dashboard/AssignBankerModal";
 
 const baseUrl = process.env.REACT_APP_API_BASE_URL;
 
@@ -44,7 +45,7 @@ const STATUS_OPTIONS = [
     { value: "Login", label: "Login" },
     { value: "PD", label: "PD" },
     { value: "Sanctioned", label: "Sanctioned" },
-    { value: "Disbursed", label: "Disbursed" },
+    { value: "Disbursement", label: "Disbursement" },
     { value: "Done", label: "Done" },
 ];
 
@@ -100,6 +101,12 @@ const CaseDetailsPage = () => {
     const [productsList, setProductsList] = useState([]);
     const [kamUsers, setKamUsers] = useState([]);
     const [provisionalDocs, setProvisionalDocs] = useState([]);
+    
+    // Bank assignment state
+    const [showAssignBankerModal, setShowAssignBankerModal] = useState(false);
+    const [banks, setBanks] = useState([]);
+    const [assignedBankers, setAssignedBankers] = useState([]);
+    const [docConfig, setDocConfig] = useState({});
 
     useEffect(() => {
         fetchCaseDetails();
@@ -153,6 +160,45 @@ const CaseDetailsPage = () => {
         } catch (err) {
             console.error("Failed to fetch provisional documents:", err);
         }
+    };
+
+    // Fetch banks for bank assignment
+    const fetchBanks = async () => {
+        try {
+            const res = await apiFetch("/banks", { method: "GET", token });
+            setBanks(res.banks || res || []);
+        } catch (err) {
+            console.error("Failed to fetch banks:", err);
+        }
+    };
+
+    useEffect(() => {
+        fetchBanks();
+    }, [token]);
+
+    // Open bank assignment modal
+    const handleOpenAssignBanker = () => {
+        // Pre-populate assigned bankers from existing bank_assignments
+        const existingBankAssignments = caseData?.bank_assignments || [];
+        const existingBankerIds = existingBankAssignments.map(ba => String(ba.bankid));
+        setAssignedBankers(existingBankerIds);
+        
+        // Pre-populate document config from existing bank_assignments
+        const existingDocConfig = {};
+        existingBankAssignments.forEach(ba => {
+            if (ba.document_config) {
+                existingDocConfig[String(ba.bankid)] = ba.document_config;
+            }
+        });
+        setDocConfig(existingDocConfig);
+        
+        setShowAssignBankerModal(true);
+    };
+
+    // Close bank assignment modal
+    const closeBankerModal = async () => {
+        setShowAssignBankerModal(false);
+        fetchCaseDetails(); // Refresh case data
     };
 
     const handleSaveEdit = async () => {
@@ -264,7 +310,6 @@ const CaseDetailsPage = () => {
 
     const assignedKamObj = caseData?.assignments?.find(a => a.assigned_to_role === "KAM");
     const telecallerObj = caseData?.assignments?.find(a => a.assigned_to_role === "Telecaller");
-    const operationsObj = caseData?.assignments?.find(a => a.assigned_to_role === "Operations");
 
     return (
         <div className="case-details-page">
@@ -313,6 +358,29 @@ const CaseDetailsPage = () => {
                     >
                         <FaBan /> No Requirement
                     </button>
+                    
+                    {/* Assign to Banker button - visible for Operations when status is One Pager or Banker Review */}
+                    {user?.rolename === 'Operations' && ['One Pager', 'Banker Review'].includes(caseData.status) && (
+                        <button 
+                            className="btn-assign-banker"
+                            onClick={handleOpenAssignBanker}
+                            style={{
+                                background: '#8b5cf6',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                padding: '8px 16px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                fontWeight: 500
+                            }}
+                        >
+                            <FaUniversity /> Assign to Banker
+                        </button>
+                    )}
+                    
                     <div className="status-change-group">
                         <label className="status-change-label">Change Status:</label>
                         <select 
@@ -506,27 +574,6 @@ const CaseDetailsPage = () => {
                         <div className="compact-row">
                             <span className="compact-label">Phone</span>
                             <span className="compact-value">{telecallerObj?.phone || "-"}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Operations Card */}
-                <div className="compact-card">
-                    <div className="compact-card-header">
-                        <FaUser /> <span>Operations</span>
-                    </div>
-                    <div className="compact-card-body">
-                        <div className="compact-row">
-                            <span className="compact-label">Name</span>
-                            <span className="compact-value">{operationsObj?.assigned_to_name || "Not Assigned"}</span>
-                        </div>
-                        <div className="compact-row">
-                            <span className="compact-label">Email</span>
-                            <span className="compact-value">{operationsObj?.assigned_to_email || "-"}</span>
-                        </div>
-                        <div className="compact-row">
-                            <span className="compact-label">Phone</span>
-                            <span className="compact-value">{operationsObj?.phone || "-"}</span>
                         </div>
                     </div>
                 </div>
@@ -786,6 +833,21 @@ const CaseDetailsPage = () => {
                     existingProducts={caseData.product_requirements || []}
                     productsList={productsList}
                     onSubmit={(prods, desc) => handleStatusUpdate("Meeting Done", prods, desc)}
+                />
+            )}
+            
+            {/* Assign Banker Modal */}
+            {showAssignBankerModal && (
+                <AssignBankerModal
+                    show={showAssignBankerModal}
+                    onClose={closeBankerModal}
+                    closeBankerModal={closeBankerModal}
+                    banks={banks}
+                    assignedBankers={assignedBankers}
+                    setAssignedBankers={setAssignedBankers}
+                    docConfig={docConfig}
+                    setDocConfig={setDocConfig}
+                    caseid={caseid}
                 />
             )}
         </div>

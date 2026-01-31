@@ -246,32 +246,32 @@ const UsersDashboard = () => {
       totalLeads++;
 
       if (['Meeting Done', 'Documentation Initiated', 'Documentation In Progress',
-        'Underwriting', 'Banker Review', 'Completed'].includes(status)) {
+        'Underwriting', 'Banker Review', 'Done'].includes(status)) {
         meetingDone++;
       }
 
       if (['Documentation Initiated', 'Documentation In Progress',
-        'Underwriting', 'Banker Review', 'Completed'].includes(status)) {
+        'Underwriting', 'Banker Review', 'Done'].includes(status)) {
         documentationInitiated++;
       }
 
       if (case_.bank_assignments && Array.isArray(case_.bank_assignments)) {
         const hasAcceptedBanker = case_.bank_assignments.some(ba =>
-          ba.status && ['ACCEPT', 'ACCEPTED', 'IN-PROGRESS', 'IN_PROGRESS', 'APPROVED', 'SANCTIONED', 'DISBURSED'].includes(ba.status.toUpperCase())
+          ba.status && ['ACCEPT', 'ACCEPTED', 'IN-PROGRESS', 'IN_PROGRESS', 'APPROVED', 'SANCTIONED', 'DISBURSEMENT'].includes(ba.status.toUpperCase())
         );
         if (hasAcceptedBanker) {
           bankerAccepted++;
         }
 
         const hasSanctioned = case_.bank_assignments.some(ba =>
-          ba.status && ['SANCTIONED', 'DISBURSED'].includes(ba.status.toUpperCase())
+          ba.status && ['SANCTIONED', 'DISBURSEMENT'].includes(ba.status.toUpperCase())
         );
         if (hasSanctioned) {
           sanctioned++;
         }
 
         const hasDisbursed = case_.bank_assignments.some(ba =>
-          ba.status && ba.status.toUpperCase() === 'DISBURSED'
+          ba.status && ba.status.toUpperCase() === 'DISBURSEMENT'
         );
         if (hasDisbursed) {
           disbursed++;

@@ -44,7 +44,7 @@ function ChangeStatusModal({ show, onClose, lead, onSubmit }) {
     { value: "Login", label: "Login" },
     { value: "PD", label: "PD" },
     { value: "Sanctioned", label: "Sanctioned" },
-    { value: "Disbursed", label: "Disbursed" },
+    { value: "Disbursement", label: "Disbursement" },
     { value: "Done", label: "Done" }
   ];
 
