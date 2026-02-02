@@ -49,11 +49,17 @@ const DashboardOverviewOptimized = () => {
   const [roles, setRoles] = useState([]);
   const [assigneeOptions, setAssigneeOptions] = useState([]);
 
-  // Centralized filter state
+  // Multi-select dropdown states
+  const [stageDropdownOpen, setStageDropdownOpen] = useState(false);
+  const [assigneeDropdownOpen, setAssigneeDropdownOpen] = useState(false);
+  const stageDropdownRef = React.useRef(null);
+  const assigneeDropdownRef = React.useRef(null);
+
+  // Centralized filter state - status and assignee are now arrays
   const [filters, setFilters] = useState({
-    status: "",
+    status: [],
     time: "",
-    assignee: "",
+    assignee: [],
     search: "",
     dateFrom: "",
     dateTo: ""
@@ -73,8 +79,10 @@ const DashboardOverviewOptimized = () => {
       params.set("page", page);
       params.set("limit", ITEMS_PER_PAGE);
       
-      if (filters.status && filters.status !== "Cold") {
-        params.set("status", filters.status);
+      // Handle multi-select status filter (exclude Cold which is client-side)
+      const serverStatuses = filters.status.filter(s => s !== "Cold");
+      if (serverStatuses.length > 0) {
+        params.set("status", serverStatuses.join(','));
       }
       
       if (filters.search) {
@@ -102,20 +110,20 @@ const DashboardOverviewOptimized = () => {
 
       // Apply client-side filters that aren't available server-side
       // Cold case filter
-      if (filters.status === "Cold") {
+      if (filters.status.includes("Cold")) {
         fetchedCases = fetchedCases.filter((c) =>
           c.status_updated_on &&
           dayjs().diff(dayjs(c.status_updated_on), "hour") > coldCaseThresholdHours
         );
       }
 
-      // Assignee filter (client-side since we need nested data)
-      if (filters.assignee) {
+      // Assignee filter (client-side since we need nested data) - now multi-select
+      if (filters.assignee.length > 0) {
+        const selectedAssignees = filters.assignee.map(a => a.toLowerCase());
         fetchedCases = fetchedCases.filter((c) => {
-          const kamName = c.kam_name || "";
-          const telecallerName = c.telecaller_name || "";
-          return kamName.toLowerCase() === filters.assignee.toLowerCase() ||
-                 telecallerName.toLowerCase() === filters.assignee.toLowerCase();
+          const kamName = (c.kam_name || "").toLowerCase();
+          const telecallerName = (c.telecaller_name || "").toLowerCase();
+          return selectedAssignees.includes(kamName) || selectedAssignees.includes(telecallerName);
         });
       }
 
@@ -217,8 +225,24 @@ const DashboardOverviewOptimized = () => {
     const params = new URLSearchParams(window.location.search);
     const status = params.get("status");
     if (status) {
-      setFilters(prev => ({ ...prev, status: status }));
+      // Support comma-separated statuses from URL
+      const statuses = status.split(',').map(s => s.trim()).filter(Boolean);
+      setFilters(prev => ({ ...prev, status: statuses }));
     }
+  }, []);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (stageDropdownRef.current && !stageDropdownRef.current.contains(event.target)) {
+        setStageDropdownOpen(false);
+      }
+      if (assigneeDropdownRef.current && !assigneeDropdownRef.current.contains(event.target)) {
+        setAssigneeDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Fetch cases when filters change
@@ -302,15 +326,44 @@ const DashboardOverviewOptimized = () => {
     });
   };
 
+  // Toggle selection for multi-select filters
+  const handleMultiSelectToggle = (filterType, value) => {
+    setFilters(prev => {
+      const currentValues = prev[filterType] || [];
+      if (currentValues.includes(value)) {
+        return { ...prev, [filterType]: currentValues.filter(v => v !== value) };
+      } else {
+        return { ...prev, [filterType]: [...currentValues, value] };
+      }
+    });
+  };
+
+  // Select all / clear all for multi-select
+  const handleSelectAllStages = (allStages) => {
+    if (filters.status.length === allStages.length) {
+      setFilters(prev => ({ ...prev, status: [] }));
+    } else {
+      setFilters(prev => ({ ...prev, status: [...allStages] }));
+    }
+  };
+
+  const handleSelectAllAssignees = () => {
+    if (filters.assignee.length === assigneeOptions.length) {
+      setFilters(prev => ({ ...prev, assignee: [] }));
+    } else {
+      setFilters(prev => ({ ...prev, assignee: assigneeOptions.map(a => a.name) }));
+    }
+  };
+
   const handleDateChange = (dateType, value) => {
     setFilters(prev => ({ ...prev, [dateType]: value }));
   };
 
   const clearAllFilters = () => {
     setFilters({
-      status: "",
+      status: [],
       time: "",
-      assignee: "",
+      assignee: [],
       search: "",
       dateFrom: "",
       dateTo: ""
@@ -395,27 +448,127 @@ const DashboardOverviewOptimized = () => {
             }} />
           </div>
 
-          <label>
-            Stage:
-            <select
-              className="filter-select"
-              value={filters.status}
-              onChange={(e) => handleFilterChange("status", e.target.value)}
+          {/* Stage Multi-select Dropdown */}
+          <div ref={stageDropdownRef} style={{ position: "relative", minWidth: "180px" }}>
+            <label style={{ display: "block", marginBottom: "4px", fontWeight: "500" }}>Stage:</label>
+            <div
+              onClick={() => setStageDropdownOpen(!stageDropdownOpen)}
+              style={{
+                padding: "8px 10px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                background: "#fff",
+                cursor: "pointer",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                minHeight: "36px"
+              }}
             >
-              <option value="">All</option>
-              <option value="Open">Open</option>
-              <option value="Meeting Done">Meeting Done</option>
-              <option value="Documentation Initiated">Documentation Initiated</option>
-              <option value="Documentation In Progress">Documentation In Progress</option>
-              <option value="Underwriting">Underwriting</option>
-              <option value="One Pager">One Pager</option>
-              <option value="Banker Review">Banker Review</option>
-              <option value="Disbursement">Disbursement</option>
-              <option value="Done">Done</option>
-              <option value="No Requirement">No Requirement</option>
-              <option value="Cold">Cold</option>
-            </select>
-          </label>
+              <span style={{ 
+                overflow: "hidden", 
+                textOverflow: "ellipsis", 
+                whiteSpace: "nowrap",
+                flex: 1,
+                color: filters.status.length === 0 ? "#666" : "#333"
+              }}>
+                {filters.status.length === 0 
+                  ? "All" 
+                  : filters.status.length === 1
+                    ? filters.status[0]
+                    : `${filters.status.length} selected`}
+              </span>
+              <span style={{ marginLeft: "8px", color: "#666" }}>▼</span>
+            </div>
+            
+            {stageDropdownOpen && (
+              <div style={{
+                position: "absolute",
+                top: "100%",
+                left: 0,
+                right: 0,
+                background: "#fff",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                marginTop: "2px",
+                maxHeight: "250px",
+                overflowY: "auto",
+                zIndex: 1000,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+              }}>
+                {(() => {
+                  const allStages = ["Open", "Meeting Done", "Documentation Initiated", "Documentation In Progress", "Underwriting", "One Pager", "Banker Review", "Disbursement", "Done", "No Requirement", "Cold"];
+                  return (
+                    <>
+                      <div style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        padding: "6px 10px",
+                        borderBottom: "1px solid #eee",
+                        background: "#f8fafc"
+                      }}>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleSelectAllStages(allStages); }}
+                          style={{
+                            background: "#2563eb",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            padding: "3px 8px",
+                            fontSize: "11px",
+                            cursor: "pointer"
+                          }}
+                        >
+                          {filters.status.length === allStages.length ? "Deselect All" : "Select All"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setFilters(prev => ({ ...prev, status: [] })); }}
+                          style={{
+                            background: "#dc2626",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            padding: "3px 8px",
+                            fontSize: "11px",
+                            cursor: "pointer"
+                          }}
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      {allStages.map((stage) => (
+                        <div
+                          key={stage}
+                          onClick={(e) => { e.stopPropagation(); handleMultiSelectToggle("status", stage); }}
+                          style={{
+                            padding: "6px 10px",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            background: filters.status.includes(stage) ? "#e0f2fe" : "transparent",
+                            borderBottom: "1px solid #f1f5f9"
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = filters.status.includes(stage) ? "#bae6fd" : "#f1f5f9"}
+                          onMouseOut={(e) => e.currentTarget.style.background = filters.status.includes(stage) ? "#e0f2fe" : "transparent"}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={filters.status.includes(stage)}
+                            onChange={() => {}}
+                            style={{ cursor: "pointer" }}
+                          />
+                          <span style={{ fontSize: "13px" }}>{stage}</span>
+                        </div>
+                      ))}
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
 
           <label>
             Time:
@@ -473,21 +626,120 @@ const DashboardOverviewOptimized = () => {
             </>
           )}
 
-          <label>
-            Assignee:
-            <select
-              className="filter-select"
-              value={filters.assignee}
-              onChange={(e) => handleFilterChange("assignee", e.target.value)}
+          {/* Assignee Multi-select Dropdown */}
+          <div ref={assigneeDropdownRef} style={{ position: "relative", minWidth: "180px" }}>
+            <label style={{ display: "block", marginBottom: "4px", fontWeight: "500" }}>Assignee:</label>
+            <div
+              onClick={() => setAssigneeDropdownOpen(!assigneeDropdownOpen)}
+              style={{
+                padding: "8px 10px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                background: "#fff",
+                cursor: "pointer",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                minHeight: "36px"
+              }}
             >
-              <option value="">All</option>
-              {assigneeOptions.map((a, idx) => (
-                <option key={idx} value={a.name}>
-                  {a.name} - {a.role}
-                </option>
-              ))}
-            </select>
-          </label>
+              <span style={{ 
+                overflow: "hidden", 
+                textOverflow: "ellipsis", 
+                whiteSpace: "nowrap",
+                flex: 1,
+                color: filters.assignee.length === 0 ? "#666" : "#333"
+              }}>
+                {filters.assignee.length === 0 
+                  ? "All" 
+                  : filters.assignee.length === 1
+                    ? filters.assignee[0]
+                    : `${filters.assignee.length} selected`}
+              </span>
+              <span style={{ marginLeft: "8px", color: "#666" }}>▼</span>
+            </div>
+            
+            {assigneeDropdownOpen && (
+              <div style={{
+                position: "absolute",
+                top: "100%",
+                left: 0,
+                right: 0,
+                background: "#fff",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                marginTop: "2px",
+                maxHeight: "250px",
+                overflowY: "auto",
+                zIndex: 1000,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+              }}>
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  padding: "6px 10px",
+                  borderBottom: "1px solid #eee",
+                  background: "#f8fafc"
+                }}>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleSelectAllAssignees(); }}
+                    style={{
+                      background: "#2563eb",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      padding: "3px 8px",
+                      fontSize: "11px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {filters.assignee.length === assigneeOptions.length ? "Deselect All" : "Select All"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setFilters(prev => ({ ...prev, assignee: [] })); }}
+                    style={{
+                      background: "#dc2626",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      padding: "3px 8px",
+                      fontSize: "11px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    Clear
+                  </button>
+                </div>
+                {assigneeOptions.map((a, idx) => (
+                  <div
+                    key={idx}
+                    onClick={(e) => { e.stopPropagation(); handleMultiSelectToggle("assignee", a.name); }}
+                    style={{
+                      padding: "6px 10px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      background: filters.assignee.includes(a.name) ? "#e0f2fe" : "transparent",
+                      borderBottom: "1px solid #f1f5f9"
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.background = filters.assignee.includes(a.name) ? "#bae6fd" : "#f1f5f9"}
+                    onMouseOut={(e) => e.currentTarget.style.background = filters.assignee.includes(a.name) ? "#e0f2fe" : "transparent"}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={filters.assignee.includes(a.name)}
+                      onChange={() => {}}
+                      style={{ cursor: "pointer" }}
+                    />
+                    <span style={{ fontSize: "13px" }}>{a.name} - {a.role}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <button
             onClick={clearAllFilters}
