@@ -497,7 +497,7 @@ const DashboardOverviewOptimized = () => {
                 boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
               }}>
                 {(() => {
-                  const allStages = ["Open", "Meeting Done", "Documentation Initiated", "Documentation In Progress", "Underwriting", "One Pager", "Banker Review", "Disbursement", "Done", "No Requirement", "Cold"];
+                  const allStages = ["Open", "Meeting Done", "Documentation Initiated", "Documentation In Progress", "Underwriting", "One Pager", "Banker Review", "Login", "Disbursement", "Done", "No Requirement", "Cold"];
                   return (
                     <>
                       <div style={{
