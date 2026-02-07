@@ -51,7 +51,8 @@ const CaseCard = ({
         }
     };
 
-    const assignedKam = caseData?.assignments?.find(a => a.assigned_to_role === "KAM")?.assigned_to_name;
+    // Check for kam_name directly (from /cases/list) or from assignments array (from other endpoints)
+    const assignedKam = caseData?.kam_name || caseData?.assignments?.find(a => a.assigned_to_role === "KAM")?.assigned_to_name;
 
     // Predefined action button configurations
     const actionConfig = {
@@ -138,7 +139,8 @@ const CaseCard = ({
             </h3>
 
             {/* KAM Badge */}
-            {showKam && assignedKam && (
+            {/* Always show KAM if available */}
+            {assignedKam && (
                 <div className="kam-info">
                     <FaUserTie size={12} />
                     <span>{assignedKam}</span>
