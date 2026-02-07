@@ -87,6 +87,24 @@
     color: #9ca3af;
 }
 
+/* Comment Indicator */
+.comment-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: #6366f1;
+    font-weight: 500;
+    background: rgba(99, 102, 241, 0.1);
+    padding: 3px 8px;
+    border-radius: 12px;
+    width: fit-content;
+}
+
+.comment-indicator svg {
+    color: #6366f1;
+}
+
 /* Action Buttons */
 .card-actions {
     display: flex;

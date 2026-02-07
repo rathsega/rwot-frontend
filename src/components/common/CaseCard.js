@@ -107,6 +107,13 @@ const CaseCard = ({
         );
     };
 
+    // Get latest comment for tooltip
+    const latestComment = caseData?.latest_comment;
+    const commentCount = caseData?.comment_count || 0;
+    const tooltipText = latestComment 
+        ? `💬 Latest Comment:\n${latestComment}` 
+        : '';
+
     return (
         <div 
             className={`case-card ${isStale ? 'stale' : ''}`}
@@ -115,6 +122,7 @@ const CaseCard = ({
                 borderColor: colors.border
             }}
             onClick={handleCardClick}
+            title={tooltipText}
         >
             {/* Stale Warning */}
             {isStale && (
@@ -144,6 +152,14 @@ const CaseCard = ({
                 <div className="kam-info">
                     <FaUserTie size={12} />
                     <span>{assignedKam}</span>
+                </div>
+            )}
+
+            {/* Comment indicator */}
+            {commentCount > 0 && (
+                <div className="comment-indicator">
+                    <FaCommentDots size={12} />
+                    <span>{commentCount}</span>
                 </div>
             )}
 
