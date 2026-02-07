@@ -49,18 +49,6 @@ export default function OperationsDashboardOptimized() {
     const [searchTerm, setSearchTerm] = useState("");
     const [searchDebounce, setSearchDebounce] = useState(null);
     const { coldCaseThresholdHours } = useColdCaseThreshold();
-    const [kamUsers, setKamUsers] = useState([]);
-    const [selectedKamId, setSelectedKamId] = useState("");
-
-    // Fetch KAM users on mount
-    useEffect(() => {
-        apiFetch("/users/getKamAndTelecallers", { method: "GET", token })
-            .then((res) => {
-                const users = res.users || res || [];
-                setKamUsers(users.filter(u => u.rolename === "KAM"));
-            })
-            .catch((err) => console.error("Failed to fetch KAM users:", err));
-    }, [token]);
 
     // Fetch counts on mount (with cold threshold)
     useEffect(() => {
@@ -98,7 +86,7 @@ export default function OperationsDashboardOptimized() {
     };
 
     // Fetch cases for a specific tab with pagination and search
-    const fetchTabCases = useCallback(async (tabKey, page = 1, append = false, search = "", kamId = "") => {
+    const fetchTabCases = useCallback(async (tabKey, page = 1, append = false, search = "") => {
         const config = TAB_CONFIG.find(t => t.key === tabKey);
         if (!config) return;
 
@@ -117,11 +105,6 @@ export default function OperationsDashboardOptimized() {
             // Add search if provided
             if (search && search.trim()) {
                 url += `&search=${encodeURIComponent(search.trim())}`;
-            }
-            
-            // Add KAM filter if provided
-            if (kamId) {
-                url += `&kamId=${kamId}`;
             }
             
             const res = await apiFetch(url, { method: "GET", token });
@@ -148,9 +131,9 @@ export default function OperationsDashboardOptimized() {
     useEffect(() => {
         // Only fetch if we don't have cases for this tab yet
         if (!tabCases[activeTab] && !tabLoading[activeTab]) {
-            fetchTabCases(activeTab, 1, false, searchTerm, selectedKamId);
+            fetchTabCases(activeTab, 1, false, searchTerm);
         }
-    }, [activeTab, tabCases, tabLoading, fetchTabCases, selectedKamId]);
+    }, [activeTab, tabCases, tabLoading, fetchTabCases]);
 
     // Handle search with debounce
     useEffect(() => {
@@ -161,26 +144,20 @@ export default function OperationsDashboardOptimized() {
         const timeout = setTimeout(() => {
             // Clear cached data and re-fetch with search
             setTabCases({});
-            fetchTabCases(activeTab, 1, false, searchTerm, selectedKamId);
+            fetchTabCases(activeTab, 1, false, searchTerm);
         }, 500);
         
         setSearchDebounce(timeout);
         
         return () => clearTimeout(timeout);
-    }, [searchTerm, selectedKamId]);
+    }, [searchTerm]);
 
     const handleTabChange = (tab) => {
         setActiveTab(tab);
-        // If search or KAM filter is active, fetch with filters
-        if ((searchTerm || selectedKamId) && !tabCases[tab]) {
-            fetchTabCases(tab, 1, false, searchTerm, selectedKamId);
+        // If search is active, fetch with search term
+        if (searchTerm && !tabCases[tab]) {
+            fetchTabCases(tab, 1, false, searchTerm);
         }
-    };
-
-    const handleKamFilterChange = (kamId) => {
-        setSelectedKamId(kamId);
-        // Clear cache to force re-fetch with new KAM filter
-        setTabCases({});
     };
 
     const handleSearch = (value) => {
@@ -195,13 +172,13 @@ export default function OperationsDashboardOptimized() {
         
         // Clear cache and refresh current tab cases
         setTabCases({});
-        fetchTabCases(activeTab, 1, false, searchTerm, selectedKamId);
-    }, [activeTab, fetchTabCases, token, searchTerm, coldCaseThresholdHours, selectedKamId]);
+        fetchTabCases(activeTab, 1, false, searchTerm);
+    }, [activeTab, fetchTabCases, token, searchTerm, coldCaseThresholdHours]);
 
     const handleLoadMore = () => {
         const currentPagination = tabPagination[activeTab];
         if (currentPagination?.hasMore) {
-            fetchTabCases(activeTab, currentPagination.page + 1, true, searchTerm, selectedKamId);
+            fetchTabCases(activeTab, currentPagination.page + 1, true, searchTerm);
         }
     };
 
@@ -250,55 +227,6 @@ export default function OperationsDashboardOptimized() {
 
     return (
         <div className="dashboard">
-            {/* Filters Row */}
-            <div style={{ 
-                display: "flex", 
-                gap: "16px", 
-                marginBottom: "16px", 
-                alignItems: "center",
-                flexWrap: "wrap",
-                padding: "12px 16px",
-                background: "#f8fafc",
-                borderRadius: "8px"
-            }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <label style={{ fontWeight: "500", color: "#374151" }}>Filter by KAM:</label>
-                    <select
-                        value={selectedKamId}
-                        onChange={(e) => handleKamFilterChange(e.target.value)}
-                        style={{
-                            padding: "8px 12px",
-                            borderRadius: "6px",
-                            border: "1px solid #d1d5db",
-                            background: "#fff",
-                            minWidth: "180px",
-                            fontSize: "14px"
-                        }}
-                    >
-                        <option value="">All KAMs</option>
-                        {kamUsers.map((kam) => (
-                            <option key={kam.id} value={kam.id}>{kam.name}</option>
-                        ))}
-                    </select>
-                </div>
-                {selectedKamId && (
-                    <button
-                        onClick={() => handleKamFilterChange("")}
-                        style={{
-                            padding: "6px 12px",
-                            background: "#ef4444",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: "4px",
-                            fontSize: "12px",
-                            cursor: "pointer"
-                        }}
-                    >
-                        Clear Filter
-                    </button>
-                )}
-            </div>
-
             <div className="tab-navigation">
                 {TAB_CONFIG.map(tab => (
                     <button
