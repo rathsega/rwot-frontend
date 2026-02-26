@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaTimes, FaBuilding } from "react-icons/fa";
 import { toast } from "react-toastify";
 
-function ChangeStatusModal({ show, onClose, lead, onSubmit }) {
+function ChangeStatusModal({ show, onClose, lead, onSubmit, userRole }) {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -34,7 +34,7 @@ function ChangeStatusModal({ show, onClose, lead, onSubmit }) {
 
   if (!show) return null;
 
-  const statusOptions = [
+  const allStatusOptions = [
     { value: "Meeting Done", label: "Meeting Done" },
     { value: "Documentation In Progress", label: "Documentation In Progress" },
     { value: "Underwriting", label: "Underwriting" },
@@ -47,6 +47,11 @@ function ChangeStatusModal({ show, onClose, lead, onSubmit }) {
     { value: "Disbursement", label: "Disbursement" },
     { value: "Done", label: "Done" }
   ];
+
+  const KAM_ALLOWED_STATUSES = ['Meeting Done', 'No Requirement'];
+  const statusOptions = userRole === 'KAM'
+    ? allStatusOptions.filter(opt => KAM_ALLOWED_STATUSES.includes(opt.value))
+    : allStatusOptions;
 
   return (
     <div style={{

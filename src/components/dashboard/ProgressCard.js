@@ -635,6 +635,7 @@ const ProgressCard = ({ lead, bgClass, cardClick, handleRefresh, kamUsers, coldC
                 onClose={() => setEditStatusModal(false)}
                 lead={lead}
                 onSubmit={updateCaseStatus}
+                userRole={user?.rolename}
             />
         </>
     );

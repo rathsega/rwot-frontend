@@ -32,7 +32,7 @@ const ONE_PAGER_DOC = ["OnePager"];
 const getDownloadUrl = (filename) => baseUrl + `/documents/downloadNew/${filename}`;
 
 // ✅ Change Status Modal Component
-function ChangeStatusModal({ show, onClose, lead, onSubmit }) {
+function ChangeStatusModal({ show, onClose, lead, onSubmit, userRole }) {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -64,13 +64,18 @@ function ChangeStatusModal({ show, onClose, lead, onSubmit }) {
 
   if (!show) return null;
 
-  const statusOptions = [
+  const allStatusOptions = [
     { value: "Meeting Done", label: "Meeting Done" },
     { value: "Documentation In Progress", label: "Documentation In Progress" },
     { value: "Underwriting", label: "Underwriting" },
     { value: "One Pager", label: "One Pager" },
     { value: "No Requirement", label: "No Requirement" },
   ];
+
+  const KAM_ALLOWED_STATUSES = ['Meeting Done', 'No Requirement'];
+  const statusOptions = userRole === 'KAM'
+    ? allStatusOptions.filter(opt => KAM_ALLOWED_STATUSES.includes(opt.value))
+    : allStatusOptions;
 
   return (
     <div style={{
@@ -869,6 +874,7 @@ const LeadDetailsModal = ({ lead, onClose, handleRefresh }) => {
         onClose={() => setShowChangeStatusModal(false)}
         lead={leadData}
         onSubmit={updateCaseStatus}
+        userRole={user?.rolename}
       />
     </>
   );

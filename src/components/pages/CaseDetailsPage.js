@@ -312,6 +312,12 @@ const CaseDetailsPage = () => {
     ];
     const isPostMeetingDone = postMeetingDoneStatuses.includes((caseData?.status || '').toLowerCase());
     const canChangeStatus = !(user?.rolename === 'KAM' && isPostMeetingDone);
+
+    // KAMs can only set these statuses
+    const KAM_ALLOWED_STATUSES = ['Meeting Done', 'No Requirement'];
+    const filteredStatusOptions = user?.rolename === 'KAM'
+        ? STATUS_OPTIONS.filter(opt => KAM_ALLOWED_STATUSES.includes(opt.value))
+        : STATUS_OPTIONS;
     
     const canUploadDoc = (doctype) => {
         const userRole = user?.rolename;
@@ -427,7 +433,7 @@ const CaseDetailsPage = () => {
                                 value={caseData.status}
                                 onChange={(e) => handleStatusUpdate(e.target.value)}
                             >
-                                {STATUS_OPTIONS.map(opt => (
+                                {filteredStatusOptions.map(opt => (
                                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                                 ))}
                             </select>
