@@ -4,7 +4,8 @@ import {
     FaArrowLeft, FaBuilding, FaUser, FaPhone, FaEnvelope, FaMapMarkerAlt, 
     FaMoneyBillWave, FaCalendarAlt, FaClock, FaFileAlt, FaComments, 
     FaCloudDownloadAlt, FaCloudUploadAlt, FaTrashAlt, FaEdit, FaSave,
-    FaExchangeAlt, FaHandshake, FaBan, FaTimes, FaPlus, FaUniversity
+    FaExchangeAlt, FaHandshake, FaBan, FaTimes, FaPlus, FaUniversity,
+    FaCopy, FaKey
 } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
 import apiFetch from "../../utils/api";
@@ -254,6 +255,26 @@ const CaseDetailsPage = () => {
         } catch (err) {
             toast.error(err.message || "Failed to add comment");
         }
+    };
+
+    const handleGenerateClient = async () => {
+        try {
+            await apiFetch(`/cases/${caseid}/generate-client`, {
+                method: "POST",
+                token,
+                body: JSON.stringify({})
+            });
+            toast.success("Client credentials generated successfully!");
+            fetchCaseDetails();
+        } catch (err) {
+            toast.error(err.message || "Failed to generate client credentials");
+        }
+    };
+
+    const handleCopyCredentials = () => {
+        const creds = `Email: ${caseData.clientCredentials?.email || ""}\nPassword: ${caseData.clientCredentials?.password || ""}`;
+        navigator.clipboard.writeText(creds);
+        toast.success("Client credentials copied to clipboard!");
     };
 
     const handleFileUpload = async (docname, doctype, file) => {
@@ -559,6 +580,73 @@ const CaseDetailsPage = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Client Credentials Card - Operations only, post Meeting Done */}
+                {user?.rolename === 'Operations' && isPostMeetingDone && (
+                    <div className="compact-card">
+                        <div className="compact-card-header">
+                            <FaKey /> <span>Client Credentials</span>
+                        </div>
+                        <div className="compact-card-body">
+                            {caseData.hasSpocAdmin ? (
+                                <>
+                                    <div className="compact-row">
+                                        <span className="compact-label">Email</span>
+                                        <span className="compact-value">{caseData.clientCredentials?.email || "-"}</span>
+                                    </div>
+                                    <div className="compact-row">
+                                        <span className="compact-label">Password</span>
+                                        <span className="compact-value">{caseData.clientCredentials?.password || "-"}</span>
+                                    </div>
+                                    <div style={{ marginTop: '10px' }}>
+                                        <button
+                                            onClick={handleCopyCredentials}
+                                            style={{
+                                                background: '#10b981',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                padding: '6px 14px',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                fontSize: '13px',
+                                                fontWeight: 500
+                                            }}
+                                        >
+                                            <FaCopy /> Copy Credentials
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="compact-empty" style={{ marginBottom: '10px' }}>
+                                        No client credentials generated yet
+                                    </div>
+                                    <button
+                                        onClick={handleGenerateClient}
+                                        style={{
+                                            background: '#8b5cf6',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            padding: '8px 16px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            fontSize: '13px',
+                                            fontWeight: 500
+                                        }}
+                                    >
+                                        <FaKey /> Generate Client Credentials
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {/* KAM Card */}
                 <div className="compact-card">

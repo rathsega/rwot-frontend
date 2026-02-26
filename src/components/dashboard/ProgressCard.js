@@ -549,7 +549,7 @@ const ProgressCard = ({ lead, bgClass, cardClick, handleRefresh, kamUsers, coldC
                                 <FaFileAlt style={{ marginRight: 6 }} /> View Details
                             </button>
                         ) : (<></>)}
-                        {lead?.status.indexOf('Meeting Done', 'Documentation Initiated', 'Documentation In Progress') > 0 ? !lead?.hasSpocAdmin ? (
+                        {['Meeting Done', 'Documentation Initiated', 'Documentation In Progress'].includes(lead?.status) && user?.rolename === 'Operations' ? !lead?.hasSpocAdmin ? (
                             <button
                                 className="lead-action-btn"
                                 title="Generate Client"
