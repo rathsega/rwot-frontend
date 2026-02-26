@@ -282,6 +282,15 @@ const CaseDetailsPage = () => {
         (caseData?.documents || []).find(d => d.docname === docname && d.doctype === doctype);
 
     const canEdit = user?.rolename === "KAM" || user?.rolename === "Operations" || user?.rolename === "Admin";
+
+    // KAMs cannot change status of cases that are at 'Meeting Done' or beyond
+    const postMeetingDoneStatuses = [
+        'meeting done', 'documentation initiated', 'documentation in progress',
+        'underwriting', 'one pager', 'banker review', 'login', 'pd',
+        'sanctioned', 'disbursement', 'done'
+    ];
+    const isPostMeetingDone = postMeetingDoneStatuses.includes((caseData?.status || '').toLowerCase());
+    const canChangeStatus = !(user?.rolename === 'KAM' && isPostMeetingDone);
     
     const canUploadDoc = (doctype) => {
         const userRole = user?.rolename;
@@ -315,6 +324,7 @@ const CaseDetailsPage = () => {
 
     const assignedKamObj = caseData?.assignments?.find(a => a.assigned_to_role === "KAM");
     const telecallerObj = caseData?.assignments?.find(a => a.assigned_to_role === "Telecaller");
+    const assignedBankerObjs = Array.isArray(caseData?.bank_assignments) ? caseData.bank_assignments : [];
 
     return (
         <div className="case-details-page">
@@ -357,12 +367,14 @@ const CaseDetailsPage = () => {
                     </span>
                 </div>
                 <div className="status-actions">
-                    <button 
-                        className="btn-no-requirement"
-                        onClick={() => handleStatusUpdate("No Requirement")}
-                    >
-                        <FaBan /> No Requirement
-                    </button>
+                    {canChangeStatus && (
+                        <button 
+                            className="btn-no-requirement"
+                            onClick={() => handleStatusUpdate("No Requirement")}
+                        >
+                            <FaBan /> No Requirement
+                        </button>
+                    )}
                     
                     {/* Assign to Banker button - visible for Operations when status is One Pager or Banker Review */}
                     {user?.rolename === 'Operations' && ['One Pager', 'Banker Review'].includes(caseData.status) && (
@@ -386,18 +398,25 @@ const CaseDetailsPage = () => {
                         </button>
                     )}
                     
-                    <div className="status-change-group">
-                        <label className="status-change-label">Change Status:</label>
-                        <select 
-                            className="status-dropdown"
-                            value={caseData.status}
-                            onChange={(e) => handleStatusUpdate(e.target.value)}
-                        >
-                            {STATUS_OPTIONS.map(opt => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                        </select>
-                    </div>
+                    {canChangeStatus && (
+                        <div className="status-change-group">
+                            <label className="status-change-label">Change Status:</label>
+                            <select 
+                                className="status-dropdown"
+                                value={caseData.status}
+                                onChange={(e) => handleStatusUpdate(e.target.value)}
+                            >
+                                {STATUS_OPTIONS.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                    {!canChangeStatus && user?.rolename === 'KAM' && (
+                        <div style={{ color: '#888', fontSize: '13px', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <FaLock size={12} /> Status changes managed by Operations team
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -580,6 +599,39 @@ const CaseDetailsPage = () => {
                             <span className="compact-label">Phone</span>
                             <span className="compact-value">{telecallerObj?.phone || "-"}</span>
                         </div>
+                    </div>
+                </div>
+
+                {/* Assigned Bankers Card */}
+                <div className="compact-card">
+                    <div className="compact-card-header">
+                        <FaUniversity /> <span>Assigned Bankers</span>
+                    </div>
+                    <div className="compact-card-body">
+                        {assignedBankerObjs.length > 0 ? (
+                            assignedBankerObjs.map((banker, idx) => (
+                                <div key={`${banker.bankid || banker.bank_name || 'bank'}-${idx}`} style={{ marginBottom: idx < assignedBankerObjs.length - 1 ? '14px' : 0 }}>
+                                    <div className="compact-row">
+                                        <span className="compact-label">Name</span>
+                                        <span className="compact-value">{banker.bank_name || "-"}</span>
+                                    </div>
+                                    <div className="compact-row">
+                                        <span className="compact-label">Status</span>
+                                        <span className="compact-value">{banker.status || "Pending"}</span>
+                                    </div>
+                                    <div className="compact-row">
+                                        <span className="compact-label">Email</span>
+                                        <span className="compact-value">{banker.bank_email || "-"}</span>
+                                    </div>
+                                    <div className="compact-row">
+                                        <span className="compact-label">Phone</span>
+                                        <span className="compact-value">{banker.bank_phone || "-"}</span>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="compact-empty">No banker assigned</div>
+                        )}
                     </div>
                 </div>
 

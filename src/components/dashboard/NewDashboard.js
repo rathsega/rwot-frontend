@@ -1,8 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaCalendarDay, FaCalendarWeek, FaCalendarAlt, FaChartLine, FaUsers, FaHandshake, FaFileAlt, FaCheck, FaMoneyBillWave } from 'react-icons/fa';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { FaCalendarDay, FaCalendarWeek, FaCalendarAlt, FaChartLine, FaUsers, FaHandshake, FaFileAlt, FaCheck, FaMoneyBillWave, FaArrowLeft, FaBuilding, FaUser, FaPhone, FaSearch, FaFileExcel, FaSpinner } from 'react-icons/fa';
 import apiFetch from "../../utils/api";
+import dayjs from "dayjs";
 
 const NewDashboard = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const statusFilter = searchParams.get('status') || '';
+  
   const [stats, setStats] = useState({
     today: 0,
     last7Days: 0,
@@ -20,10 +26,45 @@ const NewDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   
+  // Cases list state (when status filter is active)
+  const [cases, setCases] = useState([]);
+  const [casesLoading, setCasesLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  
   // Date filter state
   const [dateFilter, setDateFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    setExporting(true);
+    try {
+      const baseUrl = process.env.REACT_APP_API_BASE_URL;
+      const response = await fetch(`${baseUrl}/cases/export-excel`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        credentials: "include"
+      });
+      if (!response.ok) throw new Error("Failed to export");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Cases_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export failed:", err);
+      alert("Failed to export cases report. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // Fetch stats when filters change
   const fetchStats = useCallback(() => {
@@ -54,6 +95,63 @@ const NewDashboard = () => {
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
+
+  // Fetch cases when status filter is active
+  useEffect(() => {
+    if (statusFilter) {
+      setCasesLoading(true);
+      apiFetch("/cases", { method: "GET", credentials: "include" })
+        .then((res) => {
+          let casesData = res.cases || res || [];
+          // Filter by status
+          casesData = casesData.filter(c => 
+            c.status?.toLowerCase() === statusFilter.toLowerCase()
+          );
+          setCases(casesData);
+        })
+        .catch((err) => console.error(err))
+        .finally(() => setCasesLoading(false));
+    } else {
+      setCases([]);
+    }
+  }, [statusFilter]);
+
+  // Clear status filter
+  const clearStatusFilter = () => {
+    setSearchParams({});
+  };
+
+  // Filter cases by search
+  const filteredCases = cases.filter(c => {
+    if (!search.trim()) return true;
+    const searchLower = search.toLowerCase();
+    return (
+      c.companyname?.toLowerCase().includes(searchLower) ||
+      c.clientname?.toLowerCase().includes(searchLower) ||
+      c.caseid?.toLowerCase().includes(searchLower) ||
+      c.phonenumber?.includes(search)
+    );
+  });
+
+  const getStatusColor = (status) => {
+    const colors = {
+      'open': '#3b82f6',
+      'meeting done': '#8b5cf6',
+      'documentation initiated': '#f59e0b',
+      'documentation in progress': '#f97316',
+      'underwriting': '#10b981',
+      'one pager': '#ec4899',
+      'banker review': '#06b6d4',
+      'login': '#6366f1',
+      'pd': '#14b8a6',
+      'sanctioned': '#22c55e',
+      'disbursement': '#84cc16',
+      'done': '#10b981',
+      'rejected': '#ef4444',
+      'no requirement': '#6b7280'
+    };
+    return colors[status?.toLowerCase()] || '#6b7280';
+  };
 
   const handleDateFilterChange = (filter) => {
     setDateFilter(filter);
@@ -208,6 +306,174 @@ const NewDashboard = () => {
       background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
       minHeight: "100vh"
     }}>
+      {/* Cases List View - when status filter is active */}
+      {statusFilter ? (
+        <div>
+          {/* Header */}
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "30px",
+            flexWrap: "wrap",
+            gap: "15px"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+              <button 
+                onClick={clearStatusFilter}
+                style={{
+                  background: "rgba(255, 255, 255, 0.95)",
+                  border: "none",
+                  borderRadius: "8px",
+                  padding: "10px 15px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontWeight: "600",
+                  color: "#333",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+                }}
+              >
+                <FaArrowLeft /> Back to Dashboard
+              </button>
+              <div>
+                <h2 style={{
+                  color: "white",
+                  fontSize: "2em",
+                  fontWeight: "300",
+                  textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                  margin: 0
+                }}>
+                  {statusFilter} Cases
+                </h2>
+                <span style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.9em" }}>
+                  {filteredCases.length} cases found
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div style={{
+            background: "rgba(255, 255, 255, 0.95)",
+            borderRadius: "12px",
+            padding: "15px 20px",
+            marginBottom: "25px",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+          }}>
+            <FaSearch style={{ color: "#666" }} />
+            <input
+              type="text"
+              placeholder="Search by company, client, case ID, or phone..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                flex: 1,
+                border: "none",
+                outline: "none",
+                fontSize: "15px",
+                background: "transparent"
+              }}
+            />
+          </div>
+
+          {/* Cases Grid */}
+          {casesLoading ? (
+            <div style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              minHeight: "300px",
+              color: "white",
+              fontSize: "1.2em"
+            }}>
+              Loading cases...
+            </div>
+          ) : filteredCases.length === 0 ? (
+            <div style={{
+              background: "rgba(255, 255, 255, 0.95)",
+              borderRadius: "12px",
+              padding: "50px",
+              textAlign: "center",
+              color: "#666"
+            }}>
+              No cases found
+            </div>
+          ) : (
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
+              gap: "20px"
+            }}>
+              {filteredCases.map((caseItem) => (
+                <div
+                  key={caseItem.caseid}
+                  onClick={() => navigate(`/dashboard/case/${caseItem.caseid}`)}
+                  style={{
+                    background: "rgba(255, 255, 255, 0.95)",
+                    borderRadius: "12px",
+                    padding: "20px",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = "translateY(-3px)";
+                    e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.15)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                    <span style={{
+                      background: getStatusColor(caseItem.status),
+                      color: "white",
+                      padding: "5px 12px",
+                      borderRadius: "20px",
+                      fontSize: "0.8em",
+                      fontWeight: "600"
+                    }}>
+                      {caseItem.status}
+                    </span>
+                    <span style={{ color: "#888", fontSize: "0.85em", display: "flex", alignItems: "center", gap: "5px" }}>
+                      <FaCalendarAlt />
+                      {dayjs(caseItem.createddate).format("DD MMM YYYY")}
+                    </span>
+                  </div>
+                  
+                  <h3 style={{ margin: "0 0 10px 0", fontSize: "1.1em", color: "#333", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <FaBuilding style={{ color: "#666" }} />
+                    {caseItem.companyname || 'Unknown Company'}
+                  </h3>
+                  
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "10px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#666", fontSize: "0.9em" }}>
+                      <FaUser />
+                      <span>{caseItem.clientname || 'N/A'}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#666", fontSize: "0.9em" }}>
+                      <FaPhone />
+                      <span>{caseItem.phonenumber || 'N/A'}</span>
+                    </div>
+                  </div>
+                  
+                  <div style={{ color: "#999", fontSize: "0.85em", borderTop: "1px solid #eee", paddingTop: "10px" }}>
+                    {caseItem.caseid}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+      <>
+      {/* Dashboard Overview - default view */}
       <div style={{
         display: "flex",
         justifyContent: "space-between",
@@ -377,6 +643,37 @@ const NewDashboard = () => {
           >
             Clear Filters
           </button>
+
+          {/* Export to Excel Button */}
+          <button
+            onClick={handleExportExcel}
+            disabled={exporting}
+            style={{
+              background: exporting ? "#86efac" : "#16a34a",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              padding: "10px 20px",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: exporting ? "not-allowed" : "pointer",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+              transition: "all 0.2s ease",
+              height: "fit-content",
+              alignSelf: "flex-end",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px"
+            }}
+            onMouseOver={(e) => !exporting && (e.target.style.background = "#15803d")}
+            onMouseOut={(e) => !exporting && (e.target.style.background = "#16a34a")}
+          >
+            {exporting ? (
+              <><FaSpinner style={{ animation: "spin 1s linear infinite" }} /> Exporting...</>
+            ) : (
+              <><FaFileExcel /> Download Report</>
+            )}
+          </button>
         </div>
       </div>
 
@@ -527,6 +824,8 @@ const NewDashboard = () => {
         </div>
       </div> */}
         </>
+      )}
+      </>
       )}
     </div>
   );

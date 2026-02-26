@@ -533,7 +533,7 @@ const ProgressCard = ({ lead, bgClass, cardClick, handleRefresh, kamUsers, coldC
                 </div>
                 <div className="lead-card-footer">
                     <div className="lead-card-actions-row center">
-                        {lead?.status === 'Meeting Done' ? (
+                        {lead?.status === 'Meeting Done' && user?.rolename !== 'KAM' ? (
                             <button
                                 className="lead-action-btn"
                                 title="Documentation Initiated"

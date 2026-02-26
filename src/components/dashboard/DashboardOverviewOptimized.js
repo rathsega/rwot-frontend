@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { FaPlus, FaEye, FaRegCommentDots, FaSearch, FaSpinner } from "react-icons/fa";
+import { FaPlus, FaEye, FaRegCommentDots, FaSearch, FaSpinner, FaFileExcel } from "react-icons/fa";
 import "./dashboard-theme.css";
 import apiFetch from "../../utils/api";
 import dayjs from "dayjs";
@@ -62,7 +62,8 @@ const DashboardOverviewOptimized = () => {
     assignee: [],
     search: "",
     dateFrom: "",
-    dateTo: ""
+    dateTo: "",
+    userIds: [] // User IDs filter from Users Dashboard
   });
 
   // Fetch cases with pagination and filters
@@ -99,6 +100,11 @@ const DashboardOverviewOptimized = () => {
           params.set("dateFrom", dateRange.start.format("YYYY-MM-DD"));
           params.set("dateTo", dateRange.end.format("YYYY-MM-DD"));
         }
+      }
+      
+      // Add userIds filter for server-side filtering
+      if (filters.userIds && filters.userIds.length > 0) {
+        params.set("userIds", filters.userIds.join(','));
       }
 
       const res = await apiFetch(`/cases/list?${params.toString()}`, {
@@ -220,14 +226,54 @@ const DashboardOverviewOptimized = () => {
     }
   };
 
-  // Get query param for status filter on mount
+  // Get query params for filters on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const newFilters = {};
+    
+    // Status filter
     const status = params.get("status");
     if (status) {
       // Support comma-separated statuses from URL
       const statuses = status.split(',').map(s => s.trim()).filter(Boolean);
-      setFilters(prev => ({ ...prev, status: statuses }));
+      newFilters.status = statuses;
+    }
+    
+    // User IDs filter from Users Dashboard
+    const userIds = params.get("userIds");
+    if (userIds) {
+      newFilters.userIds = userIds.split(',').map(id => id.trim()).filter(Boolean);
+    }
+    
+    // Date filter from Users Dashboard
+    const dateFilter = params.get("dateFilter");
+    const dateFrom = params.get("dateFrom");
+    const dateTo = params.get("dateTo");
+    
+    // Map dateFilter values from UsersDashboard format to DashboardOverviewOptimized format
+    const dateFilterMap = {
+      'today': 'Today',
+      'yesterday': 'Yesterday',
+      'last7days': 'Last 7 Days',
+      'last30days': 'Last 30 Days',
+      'thisweek': 'This Week',
+      'thismonth': 'This Month',
+      'thisyear': 'This Year',
+      'financialyear': 'Financial Year',
+      'lastfinancialyear': 'Last Financial Year',
+      'custom': 'Custom'
+    };
+    
+    if (dateFilter && dateFilterMap[dateFilter]) {
+      newFilters.time = dateFilterMap[dateFilter];
+      if (dateFilter === 'custom') {
+        if (dateFrom) newFilters.dateFrom = dateFrom;
+        if (dateTo) newFilters.dateTo = dateTo;
+      }
+    }
+    
+    if (Object.keys(newFilters).length > 0) {
+      setFilters(prev => ({ ...prev, ...newFilters }));
     }
   }, []);
 
@@ -248,7 +294,7 @@ const DashboardOverviewOptimized = () => {
   // Fetch cases when filters change
   useEffect(() => {
     fetchCases(1, false);
-  }, [filters.status, filters.time, filters.assignee, filters.dateFrom, filters.dateTo]);
+  }, [filters.status, filters.time, filters.assignee, filters.dateFrom, filters.dateTo, filters.userIds]);
 
   // Debounced search
   useEffect(() => {
@@ -369,6 +415,37 @@ const DashboardOverviewOptimized = () => {
       dateTo: ""
     });
     setSearchTerm("");
+  };
+
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    setExporting(true);
+    try {
+      const baseUrl = process.env.REACT_APP_API_BASE_URL;
+      const response = await fetch(`${baseUrl}/cases/export-excel`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        credentials: "include"
+      });
+      if (!response.ok) throw new Error("Failed to export");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Cases_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export failed:", err);
+      alert("Failed to export cases report. Please try again.");
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleUserInput = (e) =>
@@ -761,9 +838,37 @@ const DashboardOverviewOptimized = () => {
           </button>
         </div>
 
-        <button className="add-user-btn" onClick={() => document.getElementById("addUserModal").showModal()}>
-          <FaPlus /> Add User
-        </button>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <button
+            onClick={handleExportExcel}
+            disabled={exporting}
+            style={{
+              background: exporting ? "#86efac" : "#16a34a",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              padding: "10px 20px",
+              cursor: exporting ? "not-allowed" : "pointer",
+              fontWeight: "600",
+              fontSize: "14px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              transition: "background 0.2s"
+            }}
+            onMouseOver={(e) => !exporting && (e.target.style.background = "#15803d")}
+            onMouseOut={(e) => !exporting && (e.target.style.background = "#16a34a")}
+          >
+            {exporting ? (
+              <><FaSpinner style={{ animation: "spin 1s linear infinite" }} /> Exporting...</>
+            ) : (
+              <><FaFileExcel /> Download Report</>
+            )}
+          </button>
+          <button className="add-user-btn" onClick={() => document.getElementById("addUserModal").showModal()}>
+            <FaPlus /> Add User
+          </button>
+        </div>
       </div>
       
       <div style={{ marginBottom: "10px", display: "flex", alignItems: "center", gap: "10px" }}>

@@ -721,7 +721,7 @@ const UsersDashboard = () => {
           gap: "15px"
         }}>
           {Object.entries(stats.statusCounts).map(([status, count]) => {
-            // Build navigation URL with all active filters
+            // Build navigation URL with all active filters - navigate to Admin Dashboard Overview
             const params = new URLSearchParams();
             params.append('status', status);
             if (selectedUserIds.length > 0) params.append('userIds', selectedUserIds.join(','));
@@ -730,7 +730,7 @@ const UsersDashboard = () => {
               if (dateFrom) params.append('dateFrom', dateFrom);
               if (dateTo) params.append('dateTo', dateTo);
             }
-            const navUrl = `/dashboard/cases?${params.toString()}`;
+            const navUrl = `/dashboard/overview?${params.toString()}`;
             
             return (
               <StatusCard 
