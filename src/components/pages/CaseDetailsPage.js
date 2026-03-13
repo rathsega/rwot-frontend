@@ -36,6 +36,22 @@ const PART_B_DOCS = [
     "Cma data"
 ];
 
+// Helper function to parse phone data (handles backward compatibility)
+const parsePhoneData = (phoneData) => {
+    if (Array.isArray(phoneData)) {
+        return phoneData;
+    } else if (typeof phoneData === 'string') {
+        try {
+            const parsed = JSON.parse(phoneData);
+            return Array.isArray(parsed) ? parsed : [parsed].filter(p => p && p.trim());
+        } catch {
+            // Not JSON, treat as single phone string
+            return phoneData.trim() ? [phoneData.trim()] : [];
+        }
+    }
+    return [];
+};
+
 const STATUS_OPTIONS = [
     { value: "Meeting Done", label: "Meeting Done" },
     { value: "Documentation In Progress", label: "Documentation In Progress" },
@@ -719,7 +735,9 @@ const CaseDetailsPage = () => {
                                     </div>
                                     <div className="compact-row">
                                         <span className="compact-label">Phone</span>
-                                        <span className="compact-value">{banker.bank_phone || "-"}</span>
+                                        <span className="compact-value">
+                                          {parsePhoneData(banker.bank_phone).join(', ') || "-"}
+                                        </span>
                                     </div>
                                 </div>
                             ))

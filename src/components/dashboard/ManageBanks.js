@@ -13,11 +13,28 @@ const ManageBanks = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
+    phone: [],
     products: []
   });
   const [newProduct, setNewProduct] = useState('');
+  const [newPhone, setNewPhone] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Helper function to parse phone data (handles backward compatibility)
+  const parsePhoneData = (phoneData) => {
+    if (Array.isArray(phoneData)) {
+      return phoneData;
+    } else if (typeof phoneData === 'string') {
+      try {
+        const parsed = JSON.parse(phoneData);
+        return Array.isArray(parsed) ? parsed : [parsed].filter(p => p && p.trim());
+      } catch {
+        // Not JSON, treat as single phone string
+        return phoneData.trim() ? [phoneData.trim()] : [];
+      }
+    }
+    return [];
+  };
 
   useEffect(() => {
     fetchBanks();
@@ -53,11 +70,12 @@ const ManageBanks = () => {
       const products = Array.isArray(bank.products) 
         ? bank.products 
         : JSON.parse(bank.products || '[]');
+      const phones = parsePhoneData(bank.phone);
       
       return (
         bank.name.toLowerCase().includes(searchLower) ||
         bank.email.toLowerCase().includes(searchLower) ||
-        bank.phone.toLowerCase().includes(searchLower) ||
+        phones.some(phone => phone.toLowerCase().includes(searchLower)) ||
         products.some(product => product.toLowerCase().includes(searchLower))
       );
     });
@@ -82,8 +100,8 @@ const ManageBanks = () => {
       toast.error('Email is required');
       return false;
     }
-    if (!formData.phone.trim()) {
-      toast.error('Phone is required');
+    if (formData.phone.length === 0) {
+      toast.error('At least one phone number is required');
       return false;
     }
     if (formData.products.length === 0) {
@@ -144,10 +162,26 @@ const ManageBanks = () => {
 
   const handleEdit = (bank) => {
     setEditingBank(bank);
+    
+    // Handle phone - could be string (old format) or array (new format)
+    let phoneArray = [];
+    if (Array.isArray(bank.phone)) {
+      phoneArray = bank.phone;
+    } else if (typeof bank.phone === 'string') {
+      // Try to parse as JSON first, if fails treat as single phone string
+      try {
+        const parsed = JSON.parse(bank.phone);
+        phoneArray = Array.isArray(parsed) ? parsed : [parsed].filter(p => p && p.trim());
+      } catch {
+        // Not JSON, treat as single phone string
+        phoneArray = bank.phone.trim() ? [bank.phone.trim()] : [];
+      }
+    }
+    
     setFormData({
       name: bank.name,
       email: bank.email,
-      phone: bank.phone,
+      phone: phoneArray,
       products: Array.isArray(bank.products) ? bank.products : JSON.parse(bank.products || '[]')
     });
     setShowModal(true);
@@ -170,10 +204,43 @@ const ManageBanks = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', phone: '', products: [] });
+    setFormData({ name: '', email: '', phone: [], products: [] });
     setNewProduct('');
+    setNewPhone('');
     setEditingBank(null);
     setShowModal(false);
+  };
+
+  const addPhone = () => {
+    if (!newPhone.trim()) {
+      toast.error('Phone number cannot be empty');
+      return;
+    }
+    
+    if (formData.phone.includes(newPhone.trim())) {
+      toast.error('Phone number already exists');
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      phone: [...prev.phone, newPhone.trim()]
+    }));
+    setNewPhone('');
+  };
+
+  const removePhone = (phoneToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      phone: prev.phone.filter(phone => phone !== phoneToRemove)
+    }));
+  };
+
+  const handlePhoneKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addPhone();
+    }
   };
 
   const addProduct = () => {
@@ -402,7 +469,25 @@ const ManageBanks = () => {
                 >
                   <td style={{ padding: '16px', fontWeight: '500', color: '#333' }}>{bank.name}</td>
                   <td style={{ padding: '16px', color: '#666' }}>{bank.email}</td>
-                  <td style={{ padding: '16px', color: '#666' }}>{bank.phone}</td>
+                  <td style={{ padding: '16px', color: '#666' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      {parsePhoneData(bank.phone).map((phone, idx) => (
+                        <span
+                          key={idx}
+                          style={{
+                            background: '#e8f5e8',
+                            color: '#2e7d32',
+                            padding: '2px 8px',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            fontWeight: '500'
+                          }}
+                        >
+                          {phone}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
                   <td style={{ padding: '16px' }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                       {(Array.isArray(bank.products) ? bank.products : JSON.parse(bank.products || '[]')).map((product, idx) => (
@@ -620,25 +705,107 @@ const ManageBanks = () => {
                   color: '#333',
                   fontSize: '14px'
                 }}>
-                  <FaPhone style={{ marginRight: '6px', color: '#2979ff' }} /> Phone *
+                  <FaPhone style={{ marginRight: '6px', color: '#2979ff' }} /> Phone Numbers *
                 </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    outline: 'none',
-                    transition: 'border-color 0.2s'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#2979ff'}
-                  onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                  required
-                />
+                
+                {/* Add Phone Input */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                  <input
+                    type="tel"
+                    value={newPhone}
+                    onChange={(e) => setNewPhone(e.target.value)}
+                    onKeyPress={handlePhoneKeyPress}
+                    placeholder="Enter phone number"
+                    style={{
+                      flex: 1,
+                      padding: '10px 12px',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#2979ff'}
+                    onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                  />
+                  <button
+                    type="button"
+                    onClick={addPhone}
+                    style={{
+                      background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '10px 20px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    Add
+                  </button>
+                </div>
+
+                {/* Display Added Phones */}
+                <div style={{ 
+                  display: 'flex', 
+                  flexWrap: 'wrap', 
+                  gap: '8px', 
+                  minHeight: '50px',
+                  padding: '12px',
+                  background: '#f8f9fa',
+                  borderRadius: '8px',
+                  border: '2px dashed #e2e8f0'
+                }}>
+                  {formData.phone.length === 0 ? (
+                    <p style={{ 
+                      color: '#999', 
+                      fontSize: '13px', 
+                      margin: 0,
+                      width: '100%',
+                      textAlign: 'center'
+                    }}>
+                      No phone numbers added yet
+                    </p>
+                  ) : (
+                    formData.phone.map((phone, idx) => (
+                      <span
+                        key={idx}
+                        style={{
+                          background: 'linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)',
+                          color: '#2e7d32',
+                          padding: '6px 12px',
+                          borderRadius: '16px',
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          border: '1px solid #a5d6a7'
+                        }}
+                      >
+                        {phone}
+                        <button
+                          type="button"
+                          onClick={() => removePhone(phone)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#2e7d32',
+                            cursor: 'pointer',
+                            padding: '2px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            fontSize: '12px'
+                          }}
+                          title="Remove phone number"
+                        >
+                          <FaTimes />
+                        </button>
+                      </span>
+                    ))
+                  )}
+                </div>
               </div>
 
               <div style={{ marginBottom: '24px' }}>

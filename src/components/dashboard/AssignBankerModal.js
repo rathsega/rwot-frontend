@@ -28,6 +28,22 @@ function AssignBankerModal({ show, closeBankerModal, onClose, banks, assignedBan
     
 
     const [provDocs, setProvDocs] = useState([]);
+
+    // Helper function to parse phone data (handles backward compatibility)
+    const parsePhoneData = (phoneData) => {
+        if (Array.isArray(phoneData)) {
+            return phoneData;
+        } else if (typeof phoneData === 'string') {
+            try {
+                const parsed = JSON.parse(phoneData);
+                return Array.isArray(parsed) ? parsed : [parsed].filter(p => p && p.trim());
+            } catch {
+                // Not JSON, treat as single phone string
+                return phoneData.trim() ? [phoneData.trim()] : [];
+            }
+        }
+        return [];
+    };
     const [loading, setLoading] = useState(false);
     const { token } = useAuth() || {};
     const [filteredBanks, setFilteredBanks] = useState(banks);
@@ -70,9 +86,12 @@ function AssignBankerModal({ show, closeBankerModal, onClose, banks, assignedBan
 
     const filterBanks = (e) => {
         const query = e.target.value.toLowerCase();
-        const filtered = banks.filter(bank =>
-            bank.name.toLowerCase().includes(query) || bank.email.toLowerCase().includes(query) || bank.phone.toLowerCase().includes(query)
-        );
+        const filtered = banks.filter(bank => {
+            const phones = parsePhoneData(bank.phone);
+            return bank.name.toLowerCase().includes(query) || 
+                   bank.email.toLowerCase().includes(query) || 
+                   phones.some(phone => phone.toLowerCase().includes(query));
+        });
         setFilteredBanks(filtered);
     };
 
